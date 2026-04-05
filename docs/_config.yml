@@ -21,8 +21,8 @@
 title: Rediscovering x.25
 # email: your-email@example.com
 description: >- # this means to ignore newlines until "baseurl:"
-  Rediscovering x.25 hardware and software.  Exploring the pre-IP network world,
-  along with legacy and current implementations.
+  Rediscovering x.25 hardware and software.  Exploring packet switched virtual circuit networking,
+  legacy and current hardware and software on Linux, Cisco and others.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://x25.i8c.net" # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: jekyllrb

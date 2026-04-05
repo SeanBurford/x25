@@ -7,5 +7,6 @@ _site/
 vendor/
 # Editor files
 *.sw?
+*_exiftool_tmp
 # Ruby stuff
 Gemfile.lock

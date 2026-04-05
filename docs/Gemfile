@@ -18,6 +18,9 @@ group :jekyll_plugins do
   gem "jekyll-feed", "~> 0.12"
 end
 
+gem "ffi", force_ruby_platform: true
+gem "nokogiri", force_ruby_platform: true
+
 # Windows and JRuby does not include zoneinfo files, so bundle the tzinfo-data gem
 # and associated library.
 platforms :mingw, :x64_mingw, :mswin, :jruby do
@@ -38,7 +41,4 @@ gem "jekyll-relative-links", "~> 0.6.1", group: :jekyll_plugins
 gem "jekyll-titles-from-headings", "~> 0.5.3", group: :jekyll_plugins
 gem "jekyll-github-metadata", "~> 2.16.1", group: :jekyll_plugins
 gem "jekyll-gist", "~> 1.5.0"
-
-gem "ffi", force_ruby_platform: true
-gem "nokogiri", force_ruby_platform: true
 
