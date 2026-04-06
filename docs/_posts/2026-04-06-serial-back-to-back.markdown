@@ -9,6 +9,8 @@ categories: hardware serial
 
 I have built a small collection of hardware and software for exploring X.25 networking.  It contains routers, interfaces and bridges from the 1990s through to the early 2020s.
 
+[Welcome to my Lab](/hardware/cisco/2026/04/05/welcome-to-my-lab.html) has an introduction to the various devices discussed below.
+
 ## The Problem
 
 Cisco's [Understanding the 2-Port Serial WAN Interface Card (WIC-2T)][cisco_wic2t] page says that the WIC-1T does not have a CSU/DSU on board:
@@ -278,7 +280,38 @@ Apr  6 01:55:03.627:   Call User Data (4): 0xCC000000 (ip)
 Apr  6 01:55:03.627: Serial2/0: X.25 O R1 Call Confirm (3) 8 lci 1
 {% endhighlight %}
 
+### Current Interface Config
 
+At this point, the config looks like this on the 3845:
+
+{% highlight plaintext %}
+interface Serial2/0
+ bandwidth 1948
+ ip address 192.168.199.5 255.255.255.252
+ encapsulation x25
+ x25 address 703200
+ x25 win 7
+ x25 wout 7
+ x25 ips 1024
+ x25 ops 1024
+ x25 map ip 192.168.199.6 702200 packetsize 1024 1024
+ serial restart-delay 0
+{% endhighlight %}
+
+And this on the 2610:
+{% highlight plaintext %}
+interface Serial0/0
+ bandwidth 1948
+ ip address 192.168.199.6 255.255.255.252
+ encapsulation x25 dce
+ no ip mroute-cache
+ x25 address 702200
+ x25 win 7
+ x25 wout 7
+ x25 ips 1024
+ x25 ops 1024
+ x25 map ip 192.168.199.5 703200 packetsize 1024 1024
+{% endhighlight %}
 
 [cisco_wic2t]: https://www.cisco.com/c/en/us/support/docs/routers/3600-series-multiservice-platforms/7261-wic-2t.html
 [xotpad]: https://github.com/lowobservable/xotpad
