@@ -33,6 +33,9 @@ This Cisco 3845 is a workhorse enterprise branch office router that represents t
 
 My 3845 contains a 64-channel (G.711) Voice/Fax PVDMII DSP SIMM PVDM daughter card, so it was probably used for voice/VOIP at some point.
 
+I use this router in these experiments:
+*  [Serial and Smart Serial Back to Back](/hardware/serial/2026/04/06/serial-back-to-back.html)
+
 ### Cisco 2610 - IOS 12.1(27b)
 
 This Cisco 2610 it is running `C2600-IS-M, Version 12.1(27b)`.
@@ -44,6 +47,9 @@ IOS 12.2 and later require more memory, and cards like the VWIC-1MFT-T1/E1 requi
 The Network Module slot contains a PRI-2CE1B ISDN card, which I purchased to connect to an NTU (network termination unit).
 
 [Cisco 2600 Series Hardware View][cisco_2600hw] is a good reference for discovering what cards work with this router.
+
+I use this router in these experiments:
+*  [Serial and Smart Serial Back to Back](/hardware/serial/2026/04/06/serial-back-to-back.html)
 
 ### Cisco X.25 stacks
 
@@ -70,7 +76,7 @@ Both options permit multiplexing multiple X.25 connections over the same interfa
 | Interface           | 2610     | 3845        | 1921          |
 | ---------           | ------   | ------      | ------------- |
 | WIC-1T DB60         | Detected | Detected    | Not Supported |
-| WIC-2T Smart Serial | ?        | ?           | Not Supported |
+| WIC-2T Smart Serial | ✅ Yes   | ?           | Not Supported |
 | Serial-4T DB60      | ?        | ✅ Yes      | Not Supported |
 | VWIC2-1MFT-T1/E1    | ?        | ✅ Yes      | ?             |
 | VWIC3-1MFT-T1/E1    | ?        | ?           | ✅ Yes           |
@@ -88,6 +94,7 @@ The WIC-1T supports a 2Mb/s serial connection.  It has a DB-60 receptacle on the
 * **Back to back** connection with other Cisco serial cards.
 * **x.21**: A smaller connection typically used on external DCE/DTE devices for connecting to public networks.
 * **V.35**: A large connector for X.25 public networks.
+* etc...
 
 Cisco's [Understanding the 1-Port Serial WAN Interface Card (WIC-1T)][cisco_wic1t] page is a good starting point for this card.
 
@@ -96,15 +103,19 @@ Cisco's [Understanding the 1-Port Serial WAN Interface Card (WIC-1T)][cisco_wic1
 ![WIC-2T Serial Card](/assets/images/800/wic_2t_rear.jpg)
 *WIC-2T Serial Card*
 
-The WIC-2T supports two 2Mb/s serial connections.  It has Smart Serial receptacle on the card and supports different cables for:
+The WIC-2T supports two 2Mb/s serial connections.  It has Smart Serial receptacle on the card and supports 12-in-1 cables for:
 
 * **Back to back** connection with other Cisco serial cards.
 * **x.21** and **V.35**
 * **RS-232** and **RS-449** asynchronous serial.
+* etc...
 
 Both the WIC-1T and WIC-2T show up as `PowerQUICC Serial` in `show interfaces`.
 
 Cisco's [Understanding the 2-Port Serial WAN Interface Card (WIC-2T)][cisco_wic2t] page is a good starting point for this card.
+
+I use this card in these experiments:
+*  [Serial and Smart Serial Back to Back](/hardware/serial/2026/04/06/serial-back-to-back.html)
 
 ### Serial-4T Synchronous Serial (DB-60)
 
@@ -114,6 +125,9 @@ Cisco's [Understanding the 2-Port Serial WAN Interface Card (WIC-2T)][cisco_wic2
 The WIC-4T supports four 2Mb/s serial connections (or faster with fewer connections).  It has DB-60 receptacles supports various 5-in-1 cables.  `show diag` reports this card as a `Mueslix-4T Port adapter`.
 
 Cisco's [Understanding the 4-Port Sync Serial Network Module (NM-4T)][cisco_nm4t] page is a good starting point for this card.
+
+I use this card in these experiments:
+*  [Serial and Smart Serial Back to Back](/hardware/serial/2026/04/06/serial-back-to-back.html)
 
 ### VWIC2-1MFT-T1/E1 ISDN card
 
