@@ -11,7 +11,7 @@ I have built a small collection of hardware and software for exploring X.25 netw
 
 ## The Problem
 
-X.25 networks used to be more common, but now they are rare and the hardware is harder to get.  In setting up this lab, it has been challenging to work out which interfaces work with which routers, under which IOS versions and feature sets, to talk to what.  I aim to gather practical information about how X.25 networks can be built and interfaced with.
+X.25 networks used to be common in aviation and telecommunications, but now they are rare and the hardware is becoming harder to get.  In setting up this lab, it has been challenging to work out which interfaces work with which routers, under which IOS versions and feature sets, to talk to what.  I aim to gather practical information about how X.25 networks can be built and interfaced with.
 
 ## Routers
 
@@ -69,27 +69,41 @@ There are two main options for Cisco X.25 WAN cards:
 *  **Synchronous Serial cards**.  Initially, I thought this was the only option.  Synchronous serial uses a shared clock signal for sending and receiving data, enabling them to operate at higher speeds compared to asynchronous serial.
 *  **ISDN T1/E1 cards**.  I later learnt that PRI ISDN cards are a great way to connect routers and build X.25 networks.  They are more readily available than serial cards, and don't require special and expensive cables.  If you can crimp a network cable, you can build an ISDN crossover cable.
 
-Both options permit multiplexing multiple X.25 connections over the same interface.
+Both options permit multiplexing multiple X.25 connections over the same interface.  The difference is that serial speed drops off faster over distance:
+
+| Data Rate (Baud) | Distance (Feet) | Distance (Meters) |
+| ---------------: | --------------: | ----------------: |
+| 2400             | 4,100           | 1,250             |
+| 4800             | 2,050           | 625               |
+| 9600             | 1,025           | 312               |
+| 19200            | 513             | 156               |
+| 38400            | 256             | 78                |
+| 56000            | 102             | 31                |
+| T1               | 50              | 15                |
+
+*Serial speed over distance from [CAB-X21 MT and CAB-X21 FC Serial Cable Specifications][cisco_cabx21_specs]*
+
+ISDN T1 and E1 should be less than about 200-300 meters (660-980 feet), which is more than ten times further than X.21 serial at that speed.
 
 ### Interface compatibility with my routers
 
 | Interface           | 2610     | 3845        | 1921          |
 | ---------           | ------   | ------      | ------------- |
-| WIC-1T DB60         | Detected | Detected    | Not Supported |
+| WIC-1T LFH-60       | Detected | Detected    | Not Supported |
 | WIC-2T Smart Serial | ✅ Yes   | ?           | Not Supported |
-| Serial-4T DB60      | ?        | ✅ Yes      | Not Supported |
+| Serial-4T LFH-60    | ?        | ✅ Yes      | Not Supported |
 | VWIC2-1MFT-T1/E1    | ?        | ✅ Yes      | ?             |
 | VWIC3-1MFT-T1/E1    | ?        | ?           | ✅ Yes           |
 | PRI 2CE1B ISDN      | ✅ Yes   | ?           | No NM Slots   | 
 
 To use synchronous serial with the 1921, [this page][cisco_serial] says that I would need a HWIC-1T, HWIC-2T or a HWIC-2A/S card.
 
-### WIC-1T Synchronous Serial (DB-60)
+### WIC-1T Synchronous Serial (LFH-60)
 
 ![WIC-1T Serial Card](/assets/images/800/wic_1t_rear.jpg)
 *WIC-1T Serial Card*
 
-The WIC-1T supports a 2Mb/s serial connection.  It has a DB-60 receptacle on the card and supports 5-in-1 cables for:
+The WIC-1T supports a 2Mb/s serial connection.  It has a LFH-60 receptacle on the card and supports 5-in-1 cables for:
 
 * **Back to back** connection with other Cisco serial cards.
 * **x.21**: A smaller connection typically used on external DCE/DTE devices for connecting to public networks.
@@ -117,12 +131,12 @@ Cisco's [Understanding the 2-Port Serial WAN Interface Card (WIC-2T)][cisco_wic2
 I use this card in these experiments:
 *  [Serial and Smart Serial Back to Back](/hardware/serial/2026/04/06/serial-back-to-back.html)
 
-### Serial-4T Synchronous Serial (DB-60)
+### Serial-4T Synchronous Serial (LFH-60)
 
 ![Serial-4T Network Module](/assets/images/800/serial_4t_rear.jpg)
 *Serial-4T Network Module*
 
-The WIC-4T supports four 2Mb/s serial connections (or faster with fewer connections).  It has DB-60 receptacles supports various 5-in-1 cables.  `show diag` reports this card as a `Mueslix-4T Port adapter`.
+The WIC-4T supports four 2Mb/s serial connections (or faster with fewer connections).  It has LFH-60 receptacles supports various 5-in-1 cables.  `show diag` reports this card as a `Mueslix-4T Port adapter`.
 
 Cisco's [Understanding the 4-Port Sync Serial Network Module (NM-4T)][cisco_nm4t] page is a good starting point for this card.
 
@@ -150,7 +164,7 @@ Cisco's [Configuring Voice and Data on 1-Port and 2-Port T1/E1 VWIC3][cisco_vwic
 ![WIC 1B-S/T V3 BRI](/assets/images/800/wic_1b_st_v3_rear.jpg)
 *WIC 1B-S/T V3 BRI*
 
-As far as I know, BRI (64k) interfaces can't be connected back to back with anything I have.  This is unfortunate, because they are also easy to get (every router comes with one).
+As far as I know, BRI (64k) interfaces can't be connected back to back with anything I have.  This is unfortunate, because they are also easy to get (it seems like every second hand router comes with one).
 
 Useless?
 
@@ -180,3 +194,4 @@ This JNA bridge connects between an external ISDN network and an internal networ
 [cisco_2600hw]: https://www.cisco.com/web/ANZ/cpp/refguide/hview/router/2600.html
 [cisco_pri]: https://www.cisco.com/c/en/us/td/docs/routers/access/interfaces/nm/hardware/installation/guide/ConntPRI.html
 [cisco_vwic3]: https://www.cisco.com/c/en/us/td/docs/routers/access/interfaces/software/feature/guide/vd-t1e1_vwic3.html
+[cisco_cabx21_specs]: https://www.cisco.com/c/en/us/support/docs/routers/10000-series-routers/46804-cabx21mt-fc.html

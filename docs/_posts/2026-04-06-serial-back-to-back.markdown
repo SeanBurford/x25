@@ -13,50 +13,71 @@ I have built a small collection of hardware and software for exploring X.25 netw
 
 ## The Problem
 
-Cisco's [Understanding the 2-Port Serial WAN Interface Card (WIC-2T)][cisco_wic2t] page says that the WIC-1T does not have a CSU/DSU on board:
+If we want to connect two routers back to back using Smart Serial or LFH-60 connectors, do we need a CSU/DSU?
+
+Cisco's [Understanding the 2-Port Serial WAN Interface Card (WIC-2T)][cisco_wic2t] page says that the WIC-1T and WIC-2T do not have on board CSU/DSU:
 
 > Note: There are no framing, clocking or linecode parameters or commands being used here. This is because this card does not have an integrated channel service unit/data service unit (CSU/DSU). You need to use an external CSU/DSU.
 
-A CSU/DSU (channel service unit/data service unit) is similar to a modem for a WAN, for example to connect it to ISDN.
-
-If we want to connect two routers back to back using Smart Serial or DB60 connectors, do we need a CSU/DSU?
+A CSU/DSU (channel service unit/data service unit) is similar to a modem for a WAN, for example to connect it to ISDN.  Serial cards don't need them, right?
 
 ### Goals
 
 1. Connect two routers back to back over serial.
 2. Establish X.25 connectivity between them.
-3. Demonstrate an X.25 over TCP connection to one of the routers.
-3. Demonstrate IP connectivity over X.25.
+3. Demonstrate X.25 over TCP (XOT) connectivity.
+3. Demonstrate IP over X.25 connectivity.
 
-## Setup
+## Connect two routers back to back over serial
 
-![DB60 to Smart Serial Cable](/assets/images/800/ss_db60.jpg)
-*DB60 to Smart Serial Cable*
+![LFH-60 to Smart Serial Cable](/assets/images/800/ss_db60.jpg)
+*LFH-60 to Smart Serial Cable*
 
-With the Smart Serial end plugged into a WIC-2T in my 2610 and the DB60 plugged into my a NM-4T in my 3845, I create some configs:
+I ordered a "CAB-SS-2660X-03" DTE cable, but I'm sure it's an after market cable because of the bag and lack of logos.  It says "703-4266" on both the plug and the bag.
 
-### Initial 2610 Config
+I believe that "CAB-SS-2660X-03" breaks down as:
 
-I ordered a "CAB-SS-2660X-03" DTE cable, but I'm sure it's an after market cable because of the bag and lack of logos.  The DB60 end should be DTE so we will configure the 2610 as DCE:
+*  **CAB**: Cable.
+*  **SS-**: Smart Serial (on one end).
+*  **26**: The Smart Serial male plug is DTE.
+*  **60**: The LFH-60 male plug is DCE.
+*  **X**: Crossover.
+*  **-03**: 3 feet long.
 
-{% highlight plaintext %}
-interface Serial0/0
- bandwidth 1948
- no ip address
- encapsulation x25 dce
- x25 win 7
- x25 wout 7
- x25 ips 1024
- x25 ops 1024
-{% endhighlight %}
+Which would make "CAB-SS-6026X":
 
-### Initial 3845 Config
+*  **CAB**: Cable.
+*  **SS-**: Smart Serial (on one end).
+*  **60**: The LFH-60 male plug is DTE.
+*  **26**: The Smart Serial male plug is DCE.
+*  **X**: Crossover.
+
+This matters because the clock lines are wired to different pins on the LFH-60 end for DTE versus DCE ([Cisco DB-60 to DB-60][crossover]).
+
+### Initial 3845 (NM-4T LFH-60) Config
+
+I configure the LFH-60 end as DTE:
 
 {% highlight plaintext %}
 interface Serial2/0
  bandwidth 1948
  no ip address
  encapsulation x25
+ x25 win 7
+ x25 wout 7
+ x25 ips 1024
+ x25 ops 1024
+{% endhighlight %}
+
+### Initial 2610 (WIC-2T SS) Config
+
+Then I configure the Smart Serial end as DCE:
+
+{% highlight plaintext %}
+interface Serial0/0
+ bandwidth 1948
+ no ip address
+ encapsulation x25 dce
  x25 win 7
  x25 wout 7
  x25 ips 1024
@@ -77,8 +98,8 @@ Apr  6 00:56:13.592:   Cause 7, Diag 0 (Network operational/No additional inform
 Apr  6 00:56:14.592: %LINEPROTO-5-UPDOWN: Line protocol on Interface Serial2/0, changed state to up
 {% endhighlight %}
 
-![DB60 plugged into NM-4T](/assets/images/800/db60.jpg)
-*DB60 plugged into NM-4T*
+![LFH-60 plugged into NM-4T](/assets/images/800/db60.jpg)
+*LFH-60 plugged into NM-4T*
 
 {% highlight plaintext %}
 Apr  6 00:56:11.911: PowerQUICC(0/0): DCD is up.
@@ -95,7 +116,7 @@ Apr  6 00:56:14.707: %LINEPROTO-5-UPDOWN: Line protocol on Interface Serial0/0, 
 
 Excellent, both ends can see the other.
 
-## X.25 routing
+## Establish X.25 connectivity between the routers
 
 I already have the following in my config on both ends, which enables XOT (X.25 over TCP) connections in to the routers:
 
@@ -179,7 +200,7 @@ Apr  6 01:17:01.392:   Call User Data (4): 0x01000000 (pad)
 Apr  6 01:17:01.392: Serial2/0: X.25 O R1 Call Confirm (3) 8 lci 1
 {% endhighlight %}
 
-### Test X.25 over TCP (XOT) via the 3845
+## Demonstrate X.25 over TCP (XOT) connectivity
 
 Using [xotpad][xotpad] I can now connect through the 3845 to the 2610 over XOT:
 
@@ -231,7 +252,7 @@ Apr  6 01:24:24.877:     Packet sizes: 128 128
 Apr  6 01:24:24.877:     Window sizes: 2 2
 {% endhighlight %}
 
-## IP Routing over X.25
+## Demonstrate IP over X.25 connectivity
 
 To test IP routing, I give each serial interface an IP address and a map to reach the other:
 
@@ -282,7 +303,14 @@ Apr  6 01:55:03.627: Serial2/0: X.25 O R1 Call Confirm (3) 8 lci 1
 
 ### Current Interface Config
 
-At this point, the config looks like this on the 3845:
+At this point, we have successfully:
+
+1. [x] Connected two routers back to back over serial.
+2. [x] Established X.25 connectivity between them.
+3. [x] Demonstrated X.25 over TCP (XOT) connectivity.
+3. [x] Demonstrated IP over X.25 connectivity.
+
+The interface config looks like this on the 3845:
 
 {% highlight plaintext %}
 interface Serial2/0
@@ -315,3 +343,4 @@ interface Serial0/0
 
 [cisco_wic2t]: https://www.cisco.com/c/en/us/support/docs/routers/3600-series-multiservice-platforms/7261-wic-2t.html
 [xotpad]: https://github.com/lowobservable/xotpad
+[crossover]: https://allpinouts.org/pinouts/cables/serial/cisco-db-60-to-db-60/
