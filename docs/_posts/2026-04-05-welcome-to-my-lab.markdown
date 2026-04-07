@@ -11,7 +11,11 @@ I have built a small collection of hardware and software for exploring X.25 netw
 
 ## The Problem
 
-X.25 networks used to be common in aviation and telecommunications, but now they are rare and the hardware is becoming harder to get.  In setting up this lab, it has been challenging to work out which interfaces work with which routers, under which IOS versions and feature sets, to talk to what.  I aim to gather practical information about how X.25 networks can be built and interfaced with.
+X.25 networks used to be common in aviation and telecommunications, but now they are rare and the hardware is becoming harder to get.
+
+In setting up this lab, it has been challenging to work out which interfaces work with which routers, under which IOS versions and feature sets, to talk to what.
+
+I aim to gather practical information about building and running X.25 networks using a variety of hardware and software.
 
 ## Routers
 
