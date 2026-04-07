@@ -1,0 +1,188 @@
+---
+layout: post
+title:  "Linux X.25 and XOT"
+date:   2026-04-07 10:00:00 +1000
+categories: xot
+---
+
+# Serial and Smart Serial Back to Back
+
+I have built a small collection of hardware and software for exploring X.25 networking.  It contains routers, interfaces and bridges from the 1990s through to the early 2020s.
+
+[Welcome to my Lab](/hardware/cisco/2026/04/05/welcome-to-my-lab.html) has an introduction to the various devices discussed below.
+
+## The Problem
+
+Can we connect a modern Linux machine to an X.25 network?
+
+### Goals
+
+1. Build and install the X.25 kernel module.
+2. Build and install XOT software.
+3. Bring up a TUN interface.
+4. Connect xotd to the TUN and a router.
+5. Serve a PAD connection from the Linux machine.
+6. Connect to the PAD server from a router.
+
+##  Build and install the X.25 kernel module
+
+### Prepare the build environment
+
+If you're interested in X.25, there's a good chance you're running RHEL.  I'll use CentOS as an equivalent.
+
+I have a fresh CentOS Stream 10 install, so there are a few packages to install.
+
+First, I install the equivalent of Debian's "Build Essential", which on CentOS includes packages we will need such as make, gcc, git, kernel-headers, kernel-devel and others:
+
+{% highlight shell %}
+yum update
+yum groupinstall "Development Tools"
+{% endhighlight %}
+
+We also need dkms to manage building the x25 module whenever the kernel is updated.  This is part of the [Extra Packages for Enterprise Linux][epel] repository.
+
+{% highlight shell %}
+dnf install epel-release
+dnf install dkms
+{% endhighlight %}
+
+At this point we need to reboot to use our new kernel that `yum update` installed, so that our kernel headers match the running kernel:
+
+{% highlight shell %}
+shutdown -r now
+{% endhighlight %}
+
+After the reboot, we're on a recent kernel:
+
+{% highlight plaintext %}
+uname -a
+Linux x25build 6.12.0-218.el10.x86_64 #1 SMP PREEMPT_DYNAMIC Tue Mar 31 12:20:48 UTC 2026 x86_64 GNU/Linux
+{% endhighlight %}
+
+### Build the x25 module
+
+#### Create the missing kernel headers
+
+We need to create some headers, such as `asm/orc_hash.h`:
+
+{% highlight shell %}
+cd /usr/src/kernels/$(uname -r)
+make clean
+make prepare
+{% endhighlight %}
+
+This gets stuck in a recursive loop that looks like this:
+
+{% highlight shell %}
+Makefile:1201: warning: ignoring old recipe for target 'built-in.a'
+scripts/Makefile.build:405: warning: overriding recipe for target 'modules.order'
+Makefile:1921: warning: ignoring old recipe for target 'modules.order'
+scripts/Makefile.build:395: warning: overriding recipe for target 'built-in.a'
+Makefile:1201: warning: ignoring old recipe for target 'built-in.a'
+scripts/Makefile.build:405: warning: overriding recipe for target 'modules.order'
+Makefile:1921: warning: ignoring old recipe for target 'modules.order'
+{% endhighlight %}
+
+If we break the loop we find that `asm/orc_hash.h` has been created, so we can proceed.
+
+#### Create the x25 DKMS config
+
+Create a DKMS config:
+
+{% highlight shell %}
+mkdir /usr/src/x25-$(uname -r)
+cd /usr/src/x25-$(uname -r)
+cat > dkms.conf << EOF
+PACKAGE_NAME="x25"
+PACKAGE_VERSION="6.12.0-218.el10.x86_64"
+BUILT_MODULE_NAME[0]="x25"
+DEST_MODULE_LOCATION[0]="/kernel/net/x25/"
+AUTOINSTALL="yes"
+EOF
+{% endhighlight %}
+
+Populate the DKMS module directory:
+
+{% highlight shell %}
+cd /tmp
+git clone --branch kernel-6.12.0-218.el10 --single-branch --depth 1 https://gitlab.com/redhat/centos-stream/src/kernel/centos-stream-10/
+cp centos-stream-10/net/x25/* /usr/src/x25-$(uname -r)
+vi /usr/src/x25-$(uname -r)/Makefile
+{% endhighlight %}
+
+Add `CONFIG_X25 = m` to the top of `/usr/src/x25-$(uname -r)/Makefile`
+
+#### Build and install the module
+
+Configure DKMS to build the module:
+
+{% highlight shell %}
+dkms add -m x25 -v $(uname -r)
+dkms build -m x25 -v $(uname -r)
+dkms install -m x25 -v $(uname -r)
+{% endhighlight %}
+
+At this point, we have an x25 module available:
+
+{% highlight shell %}
+modinfo x25
+filename:       /lib/modules/6.12.0-218.el10.x86_64/extra/x25.ko.xz
+alias:          net-pf-9
+license:        GPL
+description:    The X.25 Packet Layer network layer protocol
+author:         Jonathan Naylor <...>
+rhelversion:    10.3
+srcversion:     2616120E4F5357156C365AA
+depends:        
+name:           x25
+retpoline:      Y
+vermagic:       6.12.0-218.el10.x86_64 SMP preempt mod_unload modversions 
+{% endhighlight %}
+
+## Build and install XOT software
+
+JH-XOTD bridges local X.25 packets to an XOT server.
+
+{% highlight shell %}
+cd ~/src
+git clone --single-branch --depth 1 https://github.com/BAN-AI-X25/jh-xotd
+cd jh-xotd
+make
+cp xotd /usr/local/sbin/
+{% endhighlight %}
+
+{% highlight shell %}
+cd ~/src
+git clone --single-branch --depth 1 https://github.com/BAN-AI-X25/pad_svr
+cd pad_srv
+vi pad_srv3.c
+# Add includes for <sys/stat.h> and "do_utmp.h"
+vi do_copy.c
+# Add includes for <string.h> and "do_utmp.h"
+vi ptypair.c
+# Add includes for <stdlib.h>, <stdio.h> and "all.h"
+vi sighandler.c
+# Add includes for <strings.h>
+vi loging.c
+# Add includes for <unistd.h>
+vi watchdog.c
+# Add includes for <strings.h>
+vi cfgfile.c
+# Add includes for <ctype.h>
+vi do_utmp.c
+# Add includes for <ctype.h>
+CFLAGS=-D_XOPEN_SOURCE=500 make
+cp pad_svr /usr/local/sbin
+{% endhighlight %}
+
+##  Bring up a TUN interface
+
+##  Connect xotd to the TUN and a router
+
+##  Serve a PAD connection from the Linux machine
+
+##  Connect to the PAD server from a router
+
+
+[epel]: https://docs.fedoraproject.org/en-US/epel/
+

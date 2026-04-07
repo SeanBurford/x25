@@ -59,7 +59,7 @@ I use this router in these experiments:
 
 The 1921, 3845 and 2610 all have the same X.25 software stack versions:
 
-{% highlight shell %}
+{% highlight plaintext %}
 # show x25
 X.25 software, Version 3.0.0.
 ...
