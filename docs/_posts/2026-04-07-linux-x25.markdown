@@ -5,7 +5,7 @@ date:   2026-04-07 10:00:00 +1000
 categories: xot
 ---
 
-# Serial and Smart Serial Back to Back
+# Linux X.25 and XOT
 
 I have built a small collection of hardware and software for exploring X.25 networking.  It contains routers, interfaces and bridges from the 1990s through to the early 2020s.
 
@@ -70,7 +70,7 @@ make modules_prepare
 
 This gets stuck in a recursive loop that looks like this:
 
-{% highlight shell %}
+{% highlight plaintext %}
 Makefile:1201: warning: ignoring old recipe for target 'built-in.a'
 scripts/Makefile.build:405: warning: overriding recipe for target 'modules.order'
 Makefile:1921: warning: ignoring old recipe for target 'modules.order'
@@ -150,7 +150,7 @@ We don't need to load the module by hand each time we use it, this just shows th
 
 If you get this error from modprobe:
 
-{% highlight shell %}
+{% highlight plaintext %}
 modprobe x25
 modprobe: ERROR: could not insert 'x25': Exec format error
 {% endhighlight %}
@@ -300,7 +300,7 @@ Open log file /var/log/pad_svr.log
 
 Check `/var/log/pad_svr.log`.  It should end with:
 
-{% highlight shell %}
+{% highlight plaintext %}
 04/07 14:13:46 2138906 Server pad_svr starting...
 04/07 14:13:46 2138907 Monitor is watching to pad_svr (2138908)
 04/07 14:13:46 2138908 Creating an x25 socket
@@ -313,7 +313,7 @@ Check `/var/log/pad_svr.log`.  It should end with:
 
 If you see this, you need to modify line 94 of open_x25.c to match the name of your tun device and restart (e.g. `strcpy(subscription.device, "tun0");`):
 
-{% highlight shell %}
+{% highlight plaintext %}
 04/07 13:57:10 653971 Creating an x25 socket
 04/07 13:57:10 653971 Setting up x25 subscriptions
 04/07 13:57:10 653971 Set x25 subscription: Invalid argument
@@ -330,7 +330,7 @@ Sending SIGTERM to group pid 720824
 
 ###  Connect to the PAD server from a router
 
-On our router, we need to configure a route to the address that we put into `/etc/pad_svr/pad_svr.cfg`:
+On our router, we need to configure a route to the address that we put into `/etc/pad_svr/pad_svr.cfg` earlier:
 
 {% highlight plaintext %}
 c1921(config)#x25 route 999999 xot 192.0.2.100
