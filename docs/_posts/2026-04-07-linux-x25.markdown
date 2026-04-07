@@ -13,22 +13,22 @@ I have built a small collection of hardware and software for exploring X.25 netw
 
 ## The Problem
 
-Can we connect a modern Linux machine to an X.25 network?
+Can we connect a modern Linux machine to an X.25 network?  Does the x25 module still work with modern kernels?
 
 ### Goals
 
 1. Build and install the X.25 kernel module.
 2. Build and install XOT software.
 3. Bring up a TUN interface.
-4. Connect xotd to the TUN and a router.
+4. Use xotd to bring up a TUN interface.
 5. Serve a PAD connection from the Linux machine.
 6. Connect to the PAD server from a router.
 
-##  Build and install the X.25 kernel module
+###  Build and install the X.25 kernel module
 
-### Prepare the build environment
+#### Prepare the build environment
 
-If you're interested in X.25, there's a good chance you're running RHEL.  I'll use CentOS as an equivalent.
+If you're interested in X.25, there's a good chance you're running RHEL.  I'll use CentOS as an equivalent.  If you run Debian, you already know how to install build-essential and other packages.
 
 I have a fresh CentOS Stream 10 install, so there are a few packages to install.
 
@@ -59,16 +59,13 @@ uname -a
 Linux x25build 6.12.0-218.el10.x86_64 #1 SMP PREEMPT_DYNAMIC Tue Mar 31 12:20:48 UTC 2026 x86_64 GNU/Linux
 {% endhighlight %}
 
-### Build the x25 module
-
 #### Create the missing kernel headers
 
-We need to create some headers, such as `asm/orc_hash.h`:
+I'm not sure if this is still needed, but in the past I've had trouble with `asm/orc_hash.h` being missing.  This section creates that file.
 
 {% highlight shell %}
 cd /usr/src/kernels/$(uname -r)
-make clean
-make prepare
+make modules_prepare
 {% endhighlight %}
 
 This gets stuck in a recursive loop that looks like this:
@@ -87,6 +84,8 @@ If we break the loop we find that `asm/orc_hash.h` has been created, so we can p
 
 #### Create the x25 DKMS config
 
+DKMS will rebuild the module for us whenever the kernel is updated.  This process is based on the [CentOS Building Kernel Modules][centos-modules] page.
+
 Create a DKMS config:
 
 {% highlight shell %}
@@ -101,7 +100,7 @@ AUTOINSTALL="yes"
 EOF
 {% endhighlight %}
 
-Populate the DKMS module directory:
+Populate the DKMS module directory (on Debian you would use `apt source linux` instead of git to fetch the kernel source):
 
 {% highlight shell %}
 cd /tmp
@@ -114,7 +113,7 @@ Add `CONFIG_X25 = m` to the top of `/usr/src/x25-$(uname -r)/Makefile`
 
 #### Build and install the module
 
-Configure DKMS to build the module:
+Ask DKMS to build and maintain the module:
 
 {% highlight shell %}
 dkms add -m x25 -v $(uname -r)
@@ -139,50 +138,270 @@ retpoline:      Y
 vermagic:       6.12.0-218.el10.x86_64 SMP preempt mod_unload modversions 
 {% endhighlight %}
 
-## Build and install XOT software
+The module should load cleanly:
 
-JH-XOTD bridges local X.25 packets to an XOT server.
+{% highlight shell %}
+modprobe x25 
+{% endhighlight %}
+
+We don't need to load the module by hand each time we use it, this just shows that it loads cleanly.
+
+#### modprobe: ERROR: could not insert 'x25': Exec format error
+
+If you get this error from modprobe:
+
+{% highlight shell %}
+modprobe x25
+modprobe: ERROR: could not insert 'x25': Exec format error
+{% endhighlight %}
+
+Then you should reinstall kernel-headers and dkms:
+
+{% highlight shell %}
+yum reinstall kernel-devel kernel-headers
+yum reinstall dkms
+{% endhighlight %}
+
+Then rebuild the module:
+
+{% highlight shell %}
+dkms remove -m x25 -v $( uname -r ) --all
+dkms install -m x25 -v $( uname -r )
+{% endhighlight %}
+
+### Build and install XOT software
+
+JH-XOTD listens for incoming XOT connections and bridges them to a TUN interface.  This gives us an easy way to get X.25 traffic onto the TUN.
 
 {% highlight shell %}
 cd ~/src
 git clone --single-branch --depth 1 https://github.com/BAN-AI-X25/jh-xotd
 cd jh-xotd
 make
-cp xotd /usr/local/sbin/
+sudo cp xotd /usr/local/sbin/
 {% endhighlight %}
 
 {% highlight shell %}
 cd ~/src
 git clone --single-branch --depth 1 https://github.com/BAN-AI-X25/pad_svr
-cd pad_srv
-vi pad_srv3.c
-# Add includes for <sys/stat.h> and "do_utmp.h"
+cd pad_svr
+
+vi open_x25.c
+# Add includes for <strings.h>
+# Modify line 94 of open_x25.c to match the name of your tun device
+# e.g. strcpy(subscription.device, "tun0");
+
+vi pad_svr3.c
+# Add includes for <sys/stat.h>, <strings.h> and "do_utmp.h"
+
 vi do_copy.c
 # Add includes for <string.h> and "do_utmp.h"
+
 vi ptypair.c
 # Add includes for <stdlib.h>, <stdio.h> and "all.h"
+
 vi sighandler.c
 # Add includes for <strings.h>
+
 vi loging.c
 # Add includes for <unistd.h>
+
 vi watchdog.c
 # Add includes for <strings.h>
+
 vi cfgfile.c
 # Add includes for <ctype.h>
+
 vi do_utmp.c
 # Add includes for <ctype.h>
+
 CFLAGS=-D_XOPEN_SOURCE=500 make
-cp pad_svr /usr/local/sbin
+sudo cp pad_svr /usr/local/sbin
 {% endhighlight %}
 
-##  Bring up a TUN interface
+###  Bring up a TUN interface
 
-##  Connect xotd to the TUN and a router
+According to the README, jh-xotd requires a config file and a setup script.
 
-##  Serve a PAD connection from the Linux machine
+Create the config file, providing the IP address that you want to accept connections from.
 
-##  Connect to the PAD server from a router
+{% highlight shell %}
+cat > /usr/local/etc/jh-xotd.conf << EOF
+tun0 192.0.2.250 /usr/local/sbin/xotd-setup 256
+EOF
+{% endhighlight %}
 
+And create the setup script:
+
+{% highlight shell %}
+cat > /usr/local/sbin/xotd-setup << EOF
+#!/bin/sh -e
+echo "Setting up $1" > /dev/console
+ip link set "$1" up
+route --x25 add 0/0 "$1"
+echo "$1" > /var/run/xotd-tun
+EOF
+chmod +x /usr/local/sbin/xotd-setup
+{% endhighlight %}
+
+(Double check that the $1 all made it into `/usr/local/bin/xotd-setup`).
+
+### Use xotd to bring up a TUN interface
+
+We can now run xotd:
+
+{% highlight shell %}
+/usr/local/sbin/xotd -v -f /usr/local/etc/jh-xotd.conf 
+{% endhighlight %}
+
+We should be able to see the interface in `ip link`:
+
+{% highlight shell %}
+ip link
+...
+3: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN mode DEFAULT group default qlen 500
+    link/x25 
+{% endhighlight %}
+
+And we should also see the daemon listening:
+
+{% highlight shell %}
+netstat -anp | fgrep 1998
+tcp        0      0 0.0.0.0:1998            0.0.0.0:*               LISTEN      117274/xotd    
+{% endhighlight %}
+
+###  Serve a PAD connection from the Linux machine
+
+Now that we have a TUN interface capable of handling X.25 traffic, and we have xotd accepting connections and routing them to the TUN, we need something on the TUN to handle connections.  We will use `pad_svr` to accept connections.
+
+Create a config file:
+
+{% highlight shell %}
+mkdir /etc/pad_svr
+cat > /etc/pad_svr/pad_svr.cfg << EOF
+local_x121_address 999999
+log_level 5
+log_path /var/log/pad_svr.log
+Watchdog_timeout 10
+Winsize_in 2
+Pacsize_in 128
+Forward_idle_timeout 1
+x29_profile 1:0,2:0,3:0,4:1,13:4,15:0 Buffer_size 32000
+EOF
+{% endhighlight %}
+
+Run pad_svr:
+
+{% highlight shell %}
+/usr/local/sbin/pad_svr
+Name of cfg file: /etc/pad_svr/pad_svr.cfg
+Open log file /var/log/pad_svr.log
+{% endhighlight %}
+
+Check `/var/log/pad_svr.log`.  It should end with:
+
+{% highlight shell %}
+04/07 14:13:46 2138906 Server pad_svr starting...
+04/07 14:13:46 2138907 Monitor is watching to pad_svr (2138908)
+04/07 14:13:46 2138908 Creating an x25 socket
+04/07 14:13:46 2138908 Setting up x25 subscriptions
+04/07 14:13:46 2138908 Setting facilities
+04/07 14:13:46 2138908 Setting call user data 
+04/07 14:13:46 2138908 Listineing for calls on 999999
+04/07 14:13:46 2138908 Accepting for calls
+{% endhighlight %}
+
+If you see this, you need to modify line 94 of open_x25.c to match the name of your tun device and restart (e.g. `strcpy(subscription.device, "tun0");`):
+
+{% highlight shell %}
+04/07 13:57:10 653971 Creating an x25 socket
+04/07 13:57:10 653971 Setting up x25 subscriptions
+04/07 13:57:10 653971 Set x25 subscription: Invalid argument
+04/07 13:57:10 117416 Monitor: pad_svr (653971) will restart after error.
+04/07 13:57:10 117416 Monitor is watching to pad_svr (653972)
+{% endhighlight %}
+
+Note that you can also stop pad_svr with the same command:
+
+{% highlight shell %}
+/usr/local/sbin/pad_svr stop
+Sending SIGTERM to group pid 720824
+{% endhighlight %}
+
+###  Connect to the PAD server from a router
+
+On our router, we need to configure a route to the address that we put into `/etc/pad_svr/pad_svr.cfg`:
+
+{% highlight plaintext %}
+c1921(config)#x25 route 999999 xot 192.0.2.100
+{% endhighlight %}
+
+We can then use the Cisco `pad` command to connect to our Linux machine (here I have connected to a Debian machine, since forwarding 1998 to my CentOS VM was too much work):
+
+{% highlight plaintext %}
+c1921#pad 999999
+Trying 999999...Open
+Debian GNU/Linux 13
+login: 
+Password: 
+
+> uname -a
+Linux debian 6.12.74+deb13+1-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.74-2 (2026-03-08) x86_64 GNU/Linux
+> exit
+logout
+
+[Connection to 999999 closed by foreign host]
+c1921#
+{% endhighlight %}
+
+With `debug x25 xot event` and `debug x25 event` enabled, that session looked like this in the logs:
+
+{% highlight plaintext %}
+Apr  7 05:56:26.165: [192.0.2.100,1998/192.0.2.250,24526]: XOT O P2 Call (21) 8 lci 1
+Apr  7 05:56:26.165:   From (6): 701001 To (6): 999999
+Apr  7 05:56:26.165:   Facilities: (6)
+Apr  7 05:56:26.165:     Packet sizes: 2048 2048
+Apr  7 05:56:26.165:     Window sizes: 7 7
+Apr  7 05:56:26.165:   Call User Data (4): 0x01000000 (pad)
+Apr  7 05:56:26.365: [192.0.2.100,1998/192.0.2.250,24526]: XOT I P2 Call Confirm (11) 8 lci 1
+Apr  7 05:56:26.365:   From (0):  To (0): 
+Apr  7 05:56:26.365:   Facilities: (6)
+Apr  7 05:56:26.365:     Packet sizes: 128 128
+Apr  7 05:56:26.365:     Window sizes: 2 2
+
+Apr  7 05:56:44.545: [192.0.2.100,1998/192.0.2.250,24526]: XOT O P4 Clear (5) 8 lci 1
+Apr  7 05:56:44.545:   Cause 0, Diag 0 (DTE originated/No additional information)
+Apr  7 05:56:44.545: <detached>: XOT I P6 Clear Confirm (3) 8 lci 1
+{% endhighlight %}
+
+If a connection comes from an unexpected IP address (one not listed in `/usr/local/etc/jh-xotd.conf`), then `/var/log/messages` will log it:
+
+{% highlight shell %}
+Apr  7 14:17:03 x25build xotd[117274]: call from unknown address 192.0.2.59
+{% endhighlight %}
+
+## Summary
+
+Now that we have it set up, starting up our XOTd and PAD server is as simple as:
+
+{% highlight shell %}
+/usr/local/sbin/xotd -v -f /usr/local/etc/jh-xotd.conf
+/var/log/pad_svr.log
+{% endhighlight %}
+
+We have:
+
+1. [x] Built and installed the X.25 kernel module.
+2. [x] Built and installed XOT software.
+3. [x] Brought up the TUN interface.
+4. [x] Used xotd to bring up a TUN interface.
+5. [x] Served a PAD connection from the Linux machine.
+6. [x] Connected to the PAD server from a router.
+
+We could now:
+
+*  Work out how to use xotd to connect from the TUN to XOT (this looks possible in the source code).
 
 [epel]: https://docs.fedoraproject.org/en-US/epel/
+[centos-modules]: https://wiki.centos.org/HowTos(2f)BuildingKernelModules.html
 

@@ -205,7 +205,7 @@ Apr  6 01:17:01.392: Serial2/0: X.25 O R1 Call Confirm (3) 8 lci 1
 Using [xotpad][xotpad] I can now connect through the 3845 to the 2610 over XOT:
 
 {% highlight plaintext %}
-❯ ~/src/xotpad/target/debug/xotpad -g 192.168.251.247 702200 || stty sane
+❯ ~/src/xotpad/target/debug/xotpad -g 192.0.2.247 702200 || stty sane
 warning: local address is null, use the --address option to specify an address
 
 C i s c o  S y s t e m s      
@@ -230,7 +230,7 @@ Which generates these debug logs:
 Apr  6 01:19:37.051: Serial2/0: X.25 O R1 Clear (5) 8 lci 1024
 Apr  6 01:19:37.051:   Cause 0, Diag 0 (DTE originated/No additional information)
 Apr  6 01:19:37.055: Serial2/0: X.25 I R1 Clear Confirm (3) 8 lci 1024
-Apr  6 01:24:24.865: [192.168.250.34,51122/192.168.251.247,1998]: XOT I P/Inactive Call (18) 8 lci 1
+Apr  6 01:24:24.865: [192.0.2.34,51122/192.0.2.247,1998]: XOT I P/Inactive Call (18) 8 lci 1
 Apr  6 01:24:24.865:   From (0):  To (6): 702200
 Apr  6 01:24:24.865:   Facilities: (6)
 Apr  6 01:24:24.865:     Packet sizes: 128 128
@@ -245,7 +245,7 @@ Apr  6 01:24:24.865:   Call User Data (4): 0x01000000 (pad)
 Apr  6 01:24:24.877: Serial2/0: X.25 I R1 Call Confirm (5) 8 lci 1024
 Apr  6 01:24:24.877:   From (0):  To (0): 
 Apr  6 01:24:24.877:   Facilities: (0)
-Apr  6 01:24:24.877: [192.168.250.34,51122/192.168.251.247,1998]: XOT O P3 Call Confirm (11) 8 lci 1
+Apr  6 01:24:24.877: [192.0.2.34,51122/192.0.2.247,1998]: XOT O P3 Call Confirm (11) 8 lci 1
 Apr  6 01:24:24.877:   From (0):  To (0): 
 Apr  6 01:24:24.877:   Facilities: (6)
 Apr  6 01:24:24.877:     Packet sizes: 128 128
@@ -258,21 +258,21 @@ To test IP routing, I give each serial interface an IP address and a map to reac
 
 {% highlight plaintext %}
 c3845(config)# interface Serial2/0
-c3845(config-if)# ip address 192.168.199.5 255.255.255.252
-c3845(config-if)# x25 map ip 192.168.199.6 702200 packetsize 1024 1024
+c3845(config-if)# ip address 192.0.2.5 255.255.255.252
+c3845(config-if)# x25 map ip 192.0.2.6 702200 packetsize 1024 1024
 {% endhighlight %}
 
 {% highlight plaintext %}
 c2610(config)# interface Serial0/0
-c2610(config-if)# ip address 192.168.199.6 255.255.255.252
-c2610(config-if)# x25 map ip 192.168.199.5 703200 packetsize 1024 1024
+c2610(config-if)# ip address 192.0.2.6 255.255.255.252
+c2610(config-if)# x25 map ip 192.0.2.5 703200 packetsize 1024 1024
 {% endhighlight %}
 
 On both ends, `show ip route` shows that routes have been created:
 
 {% highlight plaintext %}
-c3845# show ip route 192.168.199.6 
-Routing entry for 192.168.199.4/30
+c3845# show ip route 192.0.2.6 
+Routing entry for 192.0.2.4/30
   Known via "connected", distance 0, metric 0 (connected, via interface)
   Routing Descriptor Blocks:
   * directly connected, via Serial2/0
@@ -282,10 +282,10 @@ Routing entry for 192.168.199.4/30
 The routers can ping each other:
 
 {% highlight plaintext %}
-c2610#ping 192.168.199.5         
+c2610#ping 192.0.2.5         
 
 Type escape sequence to abort.
-Sending 5, 100-byte ICMP Echos to 192.168.199.5, timeout is 2 seconds:
+Sending 5, 100-byte ICMP Echos to 192.0.2.5, timeout is 2 seconds:
 !!!!!
 Success rate is 100 percent (5/5), round-trip min/avg/max = 4/5/12 ms
 {% endhighlight %}
@@ -315,14 +315,14 @@ The interface config looks like this on the 3845:
 {% highlight plaintext %}
 interface Serial2/0
  bandwidth 1948
- ip address 192.168.199.5 255.255.255.252
+ ip address 192.0.2.5 255.255.255.252
  encapsulation x25
  x25 address 703200
  x25 win 7
  x25 wout 7
  x25 ips 1024
  x25 ops 1024
- x25 map ip 192.168.199.6 702200 packetsize 1024 1024
+ x25 map ip 192.0.2.6 702200 packetsize 1024 1024
  serial restart-delay 0
 {% endhighlight %}
 
@@ -330,7 +330,7 @@ And this on the 2610:
 {% highlight plaintext %}
 interface Serial0/0
  bandwidth 1948
- ip address 192.168.199.6 255.255.255.252
+ ip address 192.0.2.6 255.255.255.252
  encapsulation x25 dce
  no ip mroute-cache
  x25 address 702200
@@ -338,7 +338,7 @@ interface Serial0/0
  x25 wout 7
  x25 ips 1024
  x25 ops 1024
- x25 map ip 192.168.199.5 703200 packetsize 1024 1024
+ x25 map ip 192.0.2.5 703200 packetsize 1024 1024
 {% endhighlight %}
 
 [cisco_wic2t]: https://www.cisco.com/c/en/us/support/docs/routers/3600-series-multiservice-platforms/7261-wic-2t.html
