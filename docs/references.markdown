@@ -18,6 +18,7 @@ permalink: /references/
 
 *  [x25.org][x25org] is the Telebahn web site for the community behind x25 at groups.io.
 *  [x25 at groups.io][groupsio] mailing list is a community of people interested in X.25.
+*  [Compu-Global Hyper Mega Net][cghmn] is an overnet that connects retro computing enthusiasts and their machines using Wireguard.  Probably interesting if you're into X.25.
 
 ### Migration to X.25 over TCP (XOT)
 
@@ -92,6 +93,7 @@ I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data t
 
 
 [alive]: https://blog.ipspace.net/2022/04/x25-still-alive/
+[cghmn]: https://cghmn.org/
 [cisco_cm2]: https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/wan/command/wan-cr-book/wan-x2.html
 [cisco_cmd]: https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/wan/command/wan-cr-book/x25_accept_reverse_through_x25_pvc_xot.html
 [cisco_dcn]: https://www.cisco.com/c/en/us/td/docs/ios/solutions_docs/telco_dcn/tlctex25.html
