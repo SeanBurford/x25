@@ -301,14 +301,7 @@ Apr  6 01:55:03.627:   Call User Data (4): 0xCC000000 (ip)
 Apr  6 01:55:03.627: Serial2/0: X.25 O R1 Call Confirm (3) 8 lci 1
 {% endhighlight %}
 
-### Current Interface Config
-
-At this point, we have successfully:
-
-1. [x] Connected two routers back to back over serial.
-2. [x] Established X.25 connectivity between them.
-3. [x] Demonstrated X.25 over TCP (XOT) connectivity.
-3. [x] Demonstrated IP over X.25 connectivity.
+### Summary
 
 The interface config looks like this on the 3845:
 
@@ -340,6 +333,14 @@ interface Serial0/0
  x25 ops 1024
  x25 map ip 192.0.2.5 703200 packetsize 1024 1024
 {% endhighlight %}
+
+At this point, we have successfully:
+
+1. [x] Connected two routers back to back over serial.
+2. [x] Established X.25 connectivity between them.
+3. [x] Demonstrated X.25 over TCP (XOT) connectivity.
+3. [x] Demonstrated IP over X.25 connectivity.
+
 
 [cisco_wic2t]: https://www.cisco.com/c/en/us/support/docs/routers/3600-series-multiservice-platforms/7261-wic-2t.html
 [xotpad]: https://github.com/lowobservable/xotpad

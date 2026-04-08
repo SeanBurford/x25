@@ -14,6 +14,11 @@ permalink: /references/
 *  [Farsite][farsite] have a number of pages introducing X.25 and related stuff.
 *  [Configuring the Cisco PAD Facility for X.25 Connections][emp] describes PAD commands (and configuration).
 
+### Community
+
+*  [x25.org][x25org] is the Telebahn web site for the community behind x25 at groups.io.
+*  [x25 at groups.io][groupsio] mailing list is a community of people interested in X.25.
+
 ### Migration to X.25 over TCP (XOT)
 
 *  🤩 [HP Migrating X.25 over PSI to X.25 over TCP (XOT)][hpxot] describes the benefits of XOT and how HP-UX 11iv3 patched to Sept 2011 (AR1109) can be configured to speak XOT natively.
@@ -98,6 +103,7 @@ I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data t
 [cisco_xotka]: https://www.cisco.com/c/en/us/support/docs/ip/x25-over-tcp-xot/21120-xot-keepalives.html
 [emp]: https://www.employees.org/univercd/Feb-1998/cc/td/doc/product/software/ios113ed/113ed_cr/dial_c/dcprt2/dcpad.htm
 [farsite]: https://farsite.com/product-support/x-25-networking-guide/
+[groupsio]: https://groups.io/g/x25
 [hpx25]: https://support.hpe.com/hpesc/public/docDisplay?docId=c02013089&docLocale=en_US
 [hpxot]: https://support.hpe.com/hpesc/public/docDisplay?docLocale=en_US&docId=c03682619
 [iec8208]: https://www.iso.org/obp/ui/en/#iso:std:iso-iec:8208:ed-4:v1:en
@@ -111,6 +117,7 @@ I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data t
 [x21]: https://www.itu.int/rec/T-REC-X.21/en
 [x222]: https://www.itu.int/rec/T-REC-X.222/en
 [x25]: https://www.itu.int/rec/T-REC-X.25/en
+[x25org]: https://x25.org/
 [x263]: https://www.itu.int/rec/T-REC-X.263/en
 [x28]: https://www.itu.int/rec/T-REC-X.28/en
 [x29]: https://www.itu.int/rec/T-REC-X.29/en
