@@ -328,6 +328,24 @@ Note that you can also stop pad_svr with the same command:
 Sending SIGTERM to group pid 720824
 {% endhighlight %}
 
+###  Examine state in /proc/net/x25
+
+We currently have one X.25 route, which directs X.25 traffic to tun0:
+
+{% highlight shell %}
+❯ cat /proc/net/x25/route 
+Address          Digits  Device
+000000000000000  0       tun0 
+{% endhighlight %}
+
+We have one process listening for X.25 connections, on address \*:
+
+{% highlight shell %}
+❯ cat /proc/net/x25/socket 
+dest_addr  src_addr   dev   lci st vs vr va   t  t2 t21 t22 t23 Snd-Q Rcv-Q inode
+*          999999     ???   000  0  0  0  0   0   3 200 180 180     0     0 11408
+{% endhighlight %}
+
 ###  Connect to the PAD server from a router
 
 On our router, we need to configure a route to the address that we put into `/etc/pad_svr/pad_svr.cfg` earlier:
