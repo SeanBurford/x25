@@ -16,9 +16,9 @@ permalink: /references/
 
 ### Community
 
-*  [x25.org][x25org] is the Telebahn web site for the community behind x25 at groups.io.
-*  [x25 at groups.io][groupsio] mailing list is a community of people interested in X.25.
-*  [Compu-Global Hyper Mega Net][cghmn] is an overnet that connects retro computing enthusiasts and their machines using Wireguard.  Probably interesting if you're into X.25.
+*  💕💕 [x25.org][x25org] is the Telebahn web site for the community behind x25 at groups.io.
+*  💕💕 [x25 at groups.io][groupsio] mailing list is a community of people interested in X.25.
+*  💕 [Compu-Global Hyper Mega Net][cghmn] is an overnet that connects retro computing enthusiasts and their machines using Wireguard.  Probably interesting if you're into X.25.
    *  [Serivces people are running][cghmn_services] doesn't have any X.25 though.  You'll need to be on CGHMN to access `.retro`.
 
 ### Migration to X.25 over TCP (XOT)
