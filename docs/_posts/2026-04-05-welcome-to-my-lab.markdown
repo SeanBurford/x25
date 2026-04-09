@@ -31,6 +31,9 @@ This Cisco 1921 represents relatively modern routers.  It is running `C1900-UNIV
 
 It has two EHWIC slots that can accept high-speed WAN interface cards (HWIC), Voice/WAN interface cards (VWIC) and WAN interface cards (WIC).  A lot of older WAN cards were no longer supported by the software in the 1900/2900 and later series, which presents a challenge in getting it onto my X.25 network.
 
+I use this router in these experiments:
+*  [T1/E1 PRI Back to Back](/hardware/isdn/2026/04/09/pri-back-to-back.html)
+
 ### Cisco 3845 - IOS 15.1(4)M10
 
 This Cisco 3845 is a workhorse enterprise branch office router that represents the consolidation of voice and data networks.  It is running `C3845-ADVENTERPRISEK9-M, Version 15.1(4)M10`.  It supports a huge range of interfaces via 4 HWIC and 4 network module slots.  With 512M of memory and 256M of flash this is a versatile router.  It's also the noisiest of the set.
@@ -39,6 +42,7 @@ My 3845 contains a 64-channel (G.711) Voice/Fax PVDMII DSP SIMM PVDM daughter ca
 
 I use this router in these experiments:
 *  [Serial and Smart Serial Back to Back](/hardware/serial/2026/04/06/serial-back-to-back.html)
+*  [T1/E1 PRI Back to Back](/hardware/isdn/2026/04/09/pri-back-to-back.html)
 
 ### Cisco 2610 - IOS 12.1(27b)
 
@@ -87,7 +91,7 @@ Both options permit multiplexing multiple X.25 connections over the same interfa
 
 *Serial speed over distance from [CAB-X21 MT and CAB-X21 FC Serial Cable Specifications][cisco_cabx21_specs]*
 
-ISDN T1 and E1 should be less than about 200-300 meters (660-980 feet), which is more than ten times further than X.21 serial at that speed.
+ISDN T1 and E1 should be good for around 200-300 meters (660-980 feet), which is more than ten times further than X.21 serial at that speed.
 
 ### Interface compatibility with my routers
 

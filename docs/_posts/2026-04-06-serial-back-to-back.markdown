@@ -341,6 +341,8 @@ At this point, we have successfully:
 3. [x] Demonstrated X.25 over TCP (XOT) connectivity.
 3. [x] Demonstrated IP over X.25 connectivity.
 
+You might also be interested in [T1/E1 PRI Back to Back](/hardware/isdn/2026/04/09/pri-back-to-back.html)
+
 
 [cisco_wic2t]: https://www.cisco.com/c/en/us/support/docs/routers/3600-series-multiservice-platforms/7261-wic-2t.html
 [xotpad]: https://github.com/lowobservable/xotpad
