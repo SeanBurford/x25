@@ -196,13 +196,14 @@ dest_addr  src_addr   dev   lci st vs vr va   t  t2 t21 t22 t23 Snd-Q Rcv-Q inod
 Using xotpad we can make a call to `pad_svr`:
 
 {% highlight plaintext %}
-cat /proc/net/x25/socket 
 xotpad -g 127.0.0.12 -a 127001 701999 ||stty sane
 Debian GNU/Linux 13
 
 thread 'x25_vc_1' panicked at libxotpad/src/x25/vc.rs:817:57:
 not yet implemented
 {% endhighlight %}
+
+The "Not yet implemented" seems to be due to Linux setting the Q bit on a packet to xotpad.  We won't worry about that for now.
 
 ## XOT to XOT using one xotd instance
 
@@ -217,9 +218,11 @@ tun1 192.0.2.248 /usr/local/sbin/xotd-setup 256
 = 192.0.2.34 /usr/local/sbin/xotd-setup
 {% endhighlight %}
 
-This allows us to run a single xotd to manage multiple TUN devices, we can probably use this instead of running multiple xotd instances.  The benefit of multiple instances is flexibilty, we can add and remove peers without interrupting existing sessions.
+This allows us to run a single xotd to manage multiple TUN devices, we can probably use this instead of running multiple xotd instances.
 
-However, this config also fails in the same way as when we run multiple xotd instances.
+The benefit of multiple instances is flexibilty, we can add and remove peers without interrupting existing sessions.
+
+However, this config also fails XOT/XOT in the same way as when we run multiple xotd instances.
 
 ## Summary
 
@@ -251,10 +254,12 @@ or:
 
 or:
 
-*  Seperate out xotd into parts with cleaner definitions:
+*  Reimagine xotd as parts with cleaner definitions:
    *  **xot_listener** to accept XOT connections and connect() to the X.25 subsystem.
    *  **xot_connect** to listen() and accept() X.25 connections for specific address ranges and originate outbound XOT sessions.
    *  **xot_dns** to listen() and accept() X.25 connections to unknown address ranges, do DNS lookups to discover routes and run new **xot_connect** instances to hand off the connections to (similar to inetd).
+
+I think I like the last option best.
 
 [xotd]: https://github.com/BAN-AI-X25/jh-xotd
 [xotpad]: https://github.com/lowobservable/xotpad
