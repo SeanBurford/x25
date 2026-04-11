@@ -251,7 +251,7 @@ or:
 
 or:
 
-*  Seperate out xotd into two parts with cleaner definitions:
+*  Seperate out xotd into parts with cleaner definitions:
    *  **xot_listener** to accept XOT connections and connect() to the X.25 subsystem.
    *  **xot_connect** to listen() and accept() X.25 connections for specific address ranges and originate outbound XOT sessions.
    *  **xot_dns** to listen() and accept() X.25 connections to unknown address ranges, do DNS lookups to discover routes and run new **xot_connect** instances to hand off the connections to (similar to inetd).
