@@ -28,7 +28,7 @@ Cisco serial cables are expensive, ISDN cables are cheap and easy to make.
 
 With ISDN we can reserve bandwidth (channel groups) for different uses.
 
-Depending on the transceivers, ISDN T1 and E1 should be good for around 200-300 meters (660-980 feet), which is more than ten times further than X.21 serial at that speed.
+Depending on the transceivers, ISDN T1 and E1 should be good for around 200-300 meters (660-980 feet), which is more than ten times further than X.21 serial at that speed.  ISDN BRI (128k) is good for 1000 meters (3280 feet).
 
 *  **T1**: 1.544Mbps (1.536 usable) across 24 channels.  Typically used for public networks in North America/Japan.
 *  **E1**: 2.048Mbps (1.984 usable) across 32 channels.  Typically used for public networks world wide.

@@ -172,9 +172,9 @@ Cisco's [Configuring Voice and Data on 1-Port and 2-Port T1/E1 VWIC3][cisco_vwic
 ![WIC 1B-S/T V3 BRI](/assets/images/800/wic_1b_st_v3_rear.jpg)
 *WIC 1B-S/T V3 BRI*
 
-As far as I know, BRI (64k) interfaces can't be connected back to back with anything I have.  This is unfortunate, because they are also easy to get (it seems like every second hand router comes with one).
+As far as I know, BRI (2x64k + 1x16k) interfaces can't be connected back to back with anything I have.  This is unfortunate, because they are also easy to get (it seems like every second hand router comes with one).
 
-Useless?
+S/T cards are useless without an NT1 to connect them to ([such as the WIC-1B-U][cisco_isdn_wan]).  The config for that is at [Cisco Network Side ISDN BRI Voice Interface Cards][cisco_bri_b2b].
 
 ###  PRI-2CE1B ISDN card
 
@@ -203,3 +203,5 @@ This JNA bridge connects between an external ISDN network and an internal networ
 [cisco_pri]: https://www.cisco.com/c/en/us/td/docs/routers/access/interfaces/nm/hardware/installation/guide/ConntPRI.html
 [cisco_vwic3]: https://www.cisco.com/c/en/us/td/docs/routers/access/interfaces/software/feature/guide/vd-t1e1_vwic3.html
 [cisco_cabx21_specs]: https://www.cisco.com/c/en/us/support/docs/routers/10000-series-routers/46804-cabx21mt-fc.html
+[cisco_isdn_wan]: https://www.cisco.com/c/en/us/td/docs/routers/access/interfaces/ic/hardware/installation/guide/isdn_wic.html#wp1026780
+[cisco_bri_b2b]: https://www.cisco.com/c/en/us/support/docs/voice/digital-ccs/15415-bri-voice-port-cfg.html
