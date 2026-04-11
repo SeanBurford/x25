@@ -1,0 +1,262 @@
+---
+layout: post
+title:  "XOT to XOT Router"
+date:   2026-04-11 06:00:00 +1000
+categories: xot
+---
+
+# XOT to XOT Router (attempt 1)
+
+I have built a small collection of hardware and software for exploring X.25 networking.  It contains routers, interfaces and bridges from the 1990s through to the early 2020s.
+
+[Welcome to my Lab](/hardware/cisco/2026/04/05/welcome-to-my-lab.html) has an introduction to the various devices discussed below.
+
+## The Problem
+
+Having an XOT to XOT router would be very useful.  Imagine you are virtualising X.25 workloads, which requires replacing physical serial interfaces with XOT connections.  Having a router accept inbound XOT from your (now virtual) workload and send it on to the appropriate destination (based on destination X.121 address) enables you to centralise X.25 routing on the router, rather than within each workload.
+
+In my experience, Cisco routers will not connect incoming X.25 over TCP (XOT) calls to outbound XOT destinations.
+
+### Goals
+
+Xotd can bridge traffic from a local TUN interface out over XOT, and it can also accept XOT connections and bridge calls to the TUN interface.  It seems like xotd would be a good tool for creating an XOT to XOT router.
+
+Based on a rudimentary understanding of xotd, there are two ways that this might work:
+
+1. XOT to XOT using multiple xotd instances.
+2. XOT to XOT using one xotd instance.
+
+It turns out that neither works out of the box.  The reason is the same for both, and can be overcome.
+
+## XOT to XOT using multiple xotd instances
+
+In [Linux X.25 and XOT](/xot/2026/04/07/linux-x25.html) I built and configured [xotd][xotd] with a single peer.  You will want to complete that article first before reading this one.
+
+### Routing
+
+Running multiple copies of xotd will give us a 1:1 mapping of xotd to TUN interface, which is simple to envision.
+
+We should be able to use Linux's X.25 routing to move traffic between them.  We can enable this with:
+{% highlight shell %}
+sysctl net.x25.x25_forward=1
+{% endhighlight %}
+
+To tell Linux which interface is associated with which X.121 address prefix we will use the Linux net-tools `route` command.  It accepts an X.121 address prefix and mask (number of digits).
+
+I modify the interface script `/usr/local/sbin/xotd-setup` to route the prefixes to the TUN interfaces:
+
+{% highlight shell %}
+#!/bin/sh -e
+echo "Setting up $1" > /dev/console
+ip link set "$1" up
+case "$1" in
+    "tun0")
+        route --x25 add 701/3 "$1"
+        ;;
+    "tun1")
+        route --x25 add 702/3 "$1"
+        ;;
+esac
+{% endhighlight %}
+
+### Xotd for Destinations in 701/3 and 702/3
+
+#### Configuring TUN0 and TUN1
+
+I then create configuration files to configure my two xotd instances to manage tun0 and tun1:
+
+`/usr/local/etc/xotd-tun0.conf`
+{% highlight plaintext %}
+tun0 192.0.2.250 /usr/local/sbin/xotd-setup 256
+{% endhighlight %}
+
+`/usr/local/etc/xotd-tun1.conf`
+{% highlight plaintext %}
+tun1 192.0.2.248 /usr/local/sbin/xotd-setup 256
+{% endhighlight %}
+
+And attempt to start xotd:
+{% highlight shell %}
+/usr/local/sbin/xotd -v -f /usr/local/etc/xotd-tun0.conf 
+/usr/local/sbin/xotd -v -f /usr/local/etc/xotd-tun1.conf 
+{% endhighlight %}
+
+#### Allowing multiple xotd instances
+
+Only one xotd instance starts, and the logs show:
+{% highlight plaintext %}
+Apr 11 09:58:02 xotd[19440]: Error binding socket: Address already in use
+{% endhighlight %}
+
+This is caused by xotd binding all interfaces in `xotd.c`:
+
+{% highlight c %}
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons (lport);
+    addr.sin_addr.s_addr = htonl (INADDR_ANY);
+    
+    if (bind (sock, (struct sockaddr *) &addr, sizeof addr) == -1) {
+{% endhighlight %}
+
+So I modify `xotd.c` to accept a bind address argument:
+{% highlight c %}
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons (lport);
+    if (inet_pton(addr.sin_family, bindaddr, &(addr.sin_addr)) <= 0) {
+        printd ("Invalid local address '%s': %s", bindaddr, strerror(errno));
+    }
+
+    if (bind (sock, (struct sockaddr *) &addr, sizeof addr) == -1) {
+{% endhighlight %}
+
+And start xotd.  We don't have to worry about the bind addresses right now, so we will use localhost addresses:
+{% highlight shell %}
+/usr/local/sbin/xotd -v -b 127.0.0.10 -f /usr/local/etc/xotd-tun0.conf 
+/usr/local/sbin/xotd -v -b 127.0.0.11 -f /usr/local/etc/xotd-tun1.conf 
+{% endhighlight %}
+
+We can now see that `/usr/local/sbin/xotd-setup` set up our requested routes:
+{% highlight shell %}
+route --x25
+Kernel X.25 routing table
+Destination          Iface
+702/3                tun1 
+701/3                tun0 
+{% endhighlight %}
+
+#### Configuring a third xotd
+
+When we attempt a call using [xotpad][xotpad] the xotd logs show `call from unknown address 127.0.0.1`.  We will also need another xotd instance to accept our incoming calls, since the IP address in the xotd configuration file is used to both:
+
+1.  Provide the destination IP address for outbound calls.
+1.  Filter incoming calls (matching source IP to TUN devices).
+
+
+`/usr/local/etc/xotd-tun2.conf`
+{% highlight plaintext %}
+tun2 127.0.0.1 /usr/local/sbin/xotd-setup
+{% endhighlight %}
+
+After modifying `/usr/local/sbin/xotd-setup` to add a route for 127/3, I bring up another xotd on `tun2`, our X.25 routes now look like this:
+{% highlight shell %}
+route --x25
+Kernel X.25 routing table
+Destination          Iface
+127/3                tun2 
+702/3                tun1 
+701/3                tun0 
+{% endhighlight %}
+
+#### Attempting a connection
+
+Connecting to the tun2 xotd using xotpad results in an error:
+
+{% highlight shell %}
+xotpad -g 127.0.0.12 -a 127001 701001||stty sane
+Error: Custom { kind: ConnectionReset, error: "C:1 D:0" }
+{% endhighlight %}
+
+Using [x25-utils][x25_utils] x25trace, we can see that Linux is replying with a Clear Confirmation message.  The kernel doesn't seem to think it has anywhere to send this traffic:
+
+{% highlight plaintext %}
+Port: tun2
+X.25: LCI 0FF : CALL REQUEST - 127001 -> 701001
+Packet Size:     07 07
+Window Size:      2  2
+0000  01 00 00 00                                      | ....
+
+Port: tun2
+X.25: LCI 0FF : CLEAR CONFIRMATION
+{% endhighlight %}
+
+#### pad_svr test
+
+At this point we think that the problem is that Linux doesn't have something to send the packets to.  We can test that theory using [pad_svr][pad_svr].  We previously used pad_svr in [Linux X.25 and XOT](/xot/2026/04/07/linux-x25.html).
+
+`/etc/pad_svr/pad_svr.cfg` is modified to expect calls on 701999:
+{% highlight plaintext %}
+/etc/pad_svr/pad_svr.cfg 
+local_x121_address 701999
+log_level 5
+log_path /var/log/pad_svr.log
+Watchdog_timeout 10
+Winsize_in 2
+Pacsize_in 128
+Forward_idle_timeout 1
+x29_profile 1:0,2:0,3:0,4:1,13:4,15:0 Buffer_size 32000
+{% endhighlight %}
+
+With pad_svr up and running, `/proc/net/x25/socket` shows that Linux has associated it with 701999 (but interestingly has not associated it with a particular TUN device):
+{% highlight plaintext %}
+cat /proc/net/x25/socket 
+dest_addr  src_addr   dev   lci st vs vr va   t  t2 t21 t22 t23 Snd-Q Rcv-Q inode
+*          701999     ???   000  0  0  0  0   0   3 200 180 180     0     0 49719
+{% endhighlight %}
+
+Using xotpad we can make a call to `pad_svr`:
+
+{% highlight plaintext %}
+cat /proc/net/x25/socket 
+xotpad -g 127.0.0.12 -a 127001 701999 ||stty sane
+Debian GNU/Linux 13
+
+thread 'x25_vc_1' panicked at libxotpad/src/x25/vc.rs:817:57:
+not yet implemented
+{% endhighlight %}
+
+## XOT to XOT using one xotd instance
+
+Examining the source code, the xotd configuration file accepts multiple lines, with one interface and peer per line.  For example:
+
+`/usr/local/etc/jh-xotd.conf`:
+{% highlight shell %}
+# Routers
+tun0 192.0.2.250 /usr/local/sbin/xotd-setup 256
+tun1 192.0.2.248 /usr/local/sbin/xotd-setup 256
+# Clients
+= 192.0.2.34 /usr/local/sbin/xotd-setup
+{% endhighlight %}
+
+This allows us to run a single xotd to manage multiple TUN devices, we can probably use this instead of running multiple xotd instances.  The benefit of multiple instances is flexibilty, we can add and remove peers without interrupting existing sessions.
+
+However, this config also fails in the same way as when we run multiple xotd instances.
+
+## Summary
+
+xotpad can connect to pad_svr because pad_svr has a listening socket (which isn't associated with a particular TUN):
+
+![xotpad to pad_svr](/assets/images/800/xotpad_pad_svr.png)
+*xotpad to pad_svr*
+
+Linux routes calls made with `connect()` to the correct xotd (e.g. calls generated with [x25_client](/xot/2026/04/08/linux-xot-client.html))
+
+![x25_client to router](/assets/images/800/x25client_router.png)
+*x25_client to router*
+
+Since xotpad uses `writev` to inject packets directly onto a TUN device based on the callers IP address, and xotpad has no listening socket, Linux has no opportunity to route XOT to XOT packets.
+
+![XOT to XOT fails](/assets/images/800/xot_to_xot.png)
+*XOT to XOT fails*
+
+This seems to be an architectural issue.  xotd shuttles packets back and forth, with minimal inspection of the packet contents.  This works well for X.25 to XOT (where routing occurs before xotd is involved) and for XOT to X.25 (where routing does not matter since listening sockets aren't associated with TUN devices).  It fails, however, when xotd delivers packets to the wrong TUN for their X.121 address.
+
+Some possible solutions would be to:
+
+*  Have xotd listen() for each address range associated with each TUN.  This might resolve the XOT to XOT use case, however it will probably interfere with the XOT to X.25 use case?
+
+or:
+
+*  Perform routing within xotd.  xotd has no concept of destination addresses, which prevents it from routing packets to a TUN that might be able to handle them.  Adding destination addresses and routing to xotd might solve our issue.
+   *  This seems like a bad option.  Adding routing to xotd would duplicate functionality that is already available in Linux, in a way that would be surprising to the user (since `route --x25` would be inaccurate).
+
+or:
+
+*  Seperate out xotd into two parts with cleaner definitions:
+   *  **xot_listener** to accept XOT connections and connect() to the X.25 subsystem.
+   *  **xot_connect** to listen() and accept() X.25 connections for specific address ranges and originate outbound XOT sessions.
+   *  **xot_dns** to listen() and accept() X.25 connections to unknown address ranges, do DNS lookups to discover routes and run new **xot_connect** instances to hand off the connections to (similar to inetd).
+
+[xotd]: https://github.com/BAN-AI-X25/jh-xotd
+[xotpad]: https://github.com/lowobservable/xotpad
+[x25_utils]: [https://www.nic.funet.fi/pub/ham/packet/linux/ax25/
+[pad_svr]: https://github.com/BAN-AI-X25/pad_svr/blob/02013e0995885d487b1fab8243425181dbff82c2/open_x25.c
