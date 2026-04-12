@@ -104,13 +104,32 @@ Leading to:
 
 Which was immediately taken care of.
 
+#### Refactoring
+
+> Let's refactor out the tun handling into it's own process, tun-gateway. This simplifies xot-server and xot-gateway and also allows them to run unprivileged.
+>
+> xot-server can then interface between incoming XOT sessions and either xot-gateway or tun-gateway using unixpacket sockets. This enables us to simplify xot-server to run unprivileged. It listens for incoming TCP connections, accepts them, and spawns a process handle the connection. If the destination X.121 address is in the existing config file, xot-gateway makes a unixpacket socket connection to xot-gateway and relays XOT packets back and forth. If the destination is not in the config file, xot-server instead connects to tun-gateway. xot-server no longer needs to manage LCIs,
+>
+> ...
+>
+> It is very important to remain RFC 1613 compliant.
+>
+> Finally, update the README.
+
+Done.
+
 ### Things that will improve
 
 #### Access to the Golang Tool Chain
 
 Gemini does not have a Golang tool chain available to it, so it cannot run tests and will sometimes fail to update package names and dependencies during refactors.  After a refactor you usually have to give it the build time errors and have it fix them up.
 
-Asking for "Test coverage should aim for 80%" is meaningless since Gemini apparently can't measure test coverage without a Golang tool chain.  It's a while since I asked it to improve the tests, 
+Asking for "Test coverage should aim for 80%" is meaningless since Gemini apparently can't measure test coverage without a Golang tool chain.  It's a while since I asked it to improve the tests, and coverage cuurently sits at 50%:
+
+{% highlight shell %}
+go test -cover .
+ok  	xot-gateway	0.108s	coverage: 50.2% of statements
+{% endhighlight %}
 
 #### You have to be precise
 
@@ -150,7 +169,7 @@ Which revealed the problem:
 
 ## Summary
 
-Gemini has dramatically sped up my development time on this project.  It takes care of looking through code and docmentation to resolve bugs, and it has suggested some good approaches to the problems that we have encountered.  Refactoring and implementing nice to have features just requires clearly describing what you need.  I do have to keep reminding it to maintain RFC compliance, update tests and documentation and things like that.
+Gemini has dramatically sped up my development time on this project.  It takes care of looking through code and documentation to resolve bugs, and it has suggested some good approaches to the problems that we have encountered.  Refactoring and implementing nice to have features just requires clearly describing what you need.  I do have to keep reminding it to maintain RFC compliance, update tests and documentation and things like that.
 
 Best of all, in less than a dsy of effort I have a working prototype:
 
