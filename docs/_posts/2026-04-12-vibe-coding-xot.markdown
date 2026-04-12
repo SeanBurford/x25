@@ -171,7 +171,7 @@ Which revealed the problem:
 
 Gemini has dramatically sped up my development time on this project.  It takes care of looking through code and documentation to resolve bugs, and it has suggested some good approaches to the problems that we have encountered.  Refactoring and implementing nice to have features just requires clearly describing what you need.  I do have to keep reminding it to maintain RFC compliance, update tests and documentation and things like that.
 
-Best of all, in less than a dsy of effort I have a working prototype:
+Best of all, in less than a day of effort I have a working XOT to XOT Router prototype:
 
 {% highlight plaintext %}
 ❯ ~/src/xotpad/target/debug/xotpad -g 192.0.2.100 -a 127001 701001||stty sane
