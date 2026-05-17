@@ -61,6 +61,8 @@ X.25 application A          X.25 application B
        │                             │
        └──── tun-loopback relay ─────┘
               (reads tunlb0, writes tunlb1 and vice versa)
+
+> This diagram was LLM generated.
 ```
 
 ### Stress Test Results

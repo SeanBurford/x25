@@ -76,6 +76,8 @@ The second document says that many operations have conflicts within the same pro
 | Receive Disconnect Notification  |     |     |     |     | Safe | COMPAT009 |
 | Clear Conns and Shut Down  |     |     |     |     |     | — |
 
+> This table was LLM generated
+
 None of these are particularly devastating, but you can see that creating connections presents plenty of opportunities for failure.  stress-test creates a lot of connections.
 
 For a bit of variety I had Gemini develop fixes for these issues, then asked Claude to [review the results][gemini_claude]
