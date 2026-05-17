@@ -4,6 +4,8 @@ title: Linux X.25 Programmers Guide
 permalink: /programmers/
 ---
 
+<div markdown="span" style="margin-bottom: 10px; margin-top: 10px; overflow: hidden; color: #31708f; background-color: #d9edf7; border-color: #bce8f1; padding: 15px; border: 1px solid transparent; border-radius: 4px;">❕ <b>Note:</b> This document is LLM generated and checked by a human.</div>
+
 # Interfacing with Linux X.25 and TUN Interfaces
 
 This technical document describes interfacing with the Linux kernel's X.25 implementations via either the AF\_X25 socket family or the TUN network devices.  Most projects will only need to select and implement one of these two methods:

@@ -91,7 +91,7 @@ In the stress test, X.25 packet and window size is configurable, as is the maxim
 
 The amount of data that a sender have in flight before stopping to wait for acknowledgement is **packet size** X **window size**.
 
-I use a buffer size of 8192 bytes for the data.  This is because sending more than that to an AF_UNIX SOCK_SEQPACKET socket write causes an error response on my systems.  I could do multiple writes, or find the `sysctl` value to tune, but 8192 bytes is representative of what I would expect in X.25 transfers (outside of IP over X.25).  This buffer is broken down into suitably sized packets as it passes through the kernel.
+The kernel fragments large sends into multiple X.25 packets with the M (more) bit set.  Stress test defaults to a buffer size of 8192 bytes.  If you send more than this it will be truncated by the receiver's read() call unless the receiver also has a larger buffer size (`-l 65536`).  The kernel has a 64KB limit (by default?) that is shared across the socket, you'll start getting short reads at about 58KB in practice.
 
 ![Single threaded call volume by packet/window size](/assets/images/800/1t_calls_by_ws.png)
 *Single threaded call volume by packet/window size*
