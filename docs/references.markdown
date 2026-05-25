@@ -135,6 +135,7 @@ I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data t
 [openvms_problem]: https://docs.vmssoftware.com/vsi-x-25-for-openvms-problem-solving-guide
 [openvms_programming]: https://docs.vmssoftware.com/docs/vsi-x-25-for-openvms-programming-guide.pdf
 [openvms_utilities]: https://docs.vmssoftware.com/vsi-x-25-for-openvms-utilities-guide/
+[reddit_pcmail]: https://www.reddit.com/r/vintagecomputing/comments/rkrobn/i_found_a_1993_pre_release_copy_of_microsoft_mail/
 [rfc1090]: https://datatracker.ietf.org/doc/html/rfc1090
 [rfc1356]: https://datatracker.ietf.org/doc/html/rfc1356
 [rfc1613]: https://datatracker.ietf.org/doc/html/rfc1613
