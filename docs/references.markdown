@@ -12,7 +12,7 @@ permalink: /references/
 *  🤩🤩🤩 [Configuring X.25 and LAPB][cisco_x25wan] is a long chapter of a long book which covers absolutely everything related to configuring X.25 on Cisco routers.  Other chapters cover serial interface failover, configuring PAD options, XOT and DNS based X.25 routing.
    *  Protip: Navigate to the Book Title Page and press the **Download** button to get the whole book as a PDF.
 *  [Farsite][farsite] have a number of pages introducing X.25 and related stuff.
-*  [Configuring the Cisco PAD Facility for X.25 Connections][emp] describes PAD commands (and configuration).
+*  [Configuring the Cisco PAD Facility for X.25 Connections][emp] describes PAD commands (and configuration), as does [OpenVMS Utilities][openvms_utilities].
 
 ### Community
 
@@ -20,6 +20,10 @@ permalink: /references/
 *  💕💕 [x25 at groups.io][groupsio] mailing list is a community of people interested in X.25.
 *  💕 [Compu-Global Hyper Mega Net][cghmn] is an overnet that connects retro computing enthusiasts and their machines using Wireguard.  Probably interesting if you're into X.25.
    *  [Serivces people are running][cghmn_services] doesn't have any X.25 though.  You'll need to be on CGHMN to access `.retro`.
+
+### Software
+
+*  [Microsoft PC Mail 3.2][reddit_pcmail] advertised on the box that it could "link multiple Microsoft Mail postoffices by LAN, telephone or X.25."
 
 ### Migration to X.25 over TCP (XOT)
 
@@ -42,9 +46,18 @@ permalink: /references/
 *  [X25 over TCP/IP with XOT Keepalives][cisco_xotka] has an example for `r1 --serial-- r2 --xot-- r3 --serial-- r4`.
 *  [TCP over X.25][cisco_ip] has an example for running IP over an X.25 link.
 
-### HP Unix
+### Programmers and Administrators Guides
 
 *  🤩 [HP X.25/9000 Programmers Guide][hpx25] describes HP's extensions to sockets, IOCTLs and signals to support X.25.  
+*  Solaris
+   * [SunLink X.25 8.0.2 Programmer's Guide][sunlink8]
+   * [SunLink X.25 9.0 Programmer's Guide][sunlink9]
+   * [Managing SunLink X.25 9.0][sunlink9_manage]
+   * [SunLink X.25 9.0 PAD User's Guide][sunlink9_pad]
+*  OpenVMS
+   * [VSI X.25 for OpenVMS Management Guide][openvms_management]
+   * [VSI X.25 for OpenVMS Configuration Guide][openvms_config]
+   * [VSI X.25 for OpenVMS Programming Guide][openvms_programming]
 
 ## Standards
 
@@ -58,6 +71,7 @@ These RFCs (Internet Request for Comments) mostly describe how to run X over Y:
 Less well known RFCs include:
 
 *  🤩🤩 **RFC 1090**: [SMTP on X.25][rfc1090] which defines PID `C0F70000` for transport of email across X.25 links (without any IP carriage).  This sounds like fun.
+   * The [OpenVMS Config Guide][openvms_config] says that OpenVMS X.25 Mail used the "DECnet Mail-11" protocol, which was quite different to SMTP.
 *  🤩 **RFC 874**: [A Critique of X.25][rfc874]
 
 ### ISO/IEC
@@ -85,13 +99,17 @@ ITU-T Recommendations (formerly CCITT) define the various X protocols.  There ar
 * **Open Systems Interconnection** defines interoperability from an OSI point of view:
   * **X.222**: [Use of X.25 LAPB compatible data link procedures to provide the OSI connection-mode data link service][x222].
 
+## Cause/Diag Codes
+
+*  [VSI X.25 for OpenVMS Problem Solving Guide][openvms_problem] lists cause and diag codes and suggested actions.
+*  [Managing SunLink X.25 9.0][sunlink9_manage] lists the codes that SunLink uses but doesn't go into detail.
+
 ## Misc
 
 I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data transmission at 48 kilobits per second using 60-108kHz group band circuits" and includes a schematic in the standard:
 
 ![Schematic from ITU-T Recommendation V.35](/assets/images/800/v35-000.jpg)
 *Schematic from ITU-T Recommendation V.35*
-
 
 [alive]: https://blog.ipspace.net/2022/04/x25-still-alive/
 [cghmn]: https://cghmn.org/
@@ -112,10 +130,19 @@ I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data t
 [hpxot]: https://support.hpe.com/hpesc/public/docDisplay?docLocale=en_US&docId=c03682619
 [iec8208]: https://www.iso.org/obp/ui/en/#iso:std:iso-iec:8208:ed-4:v1:en
 [iec8878]: https://www.iso.org/obp/ui/en/#iso:std:iso-iec:8878:ed-2:v1:en
+[openvms_config]: https://docs.vmssoftware.com/vsi-x-25-for-openvms-configuration-guide/
+[openvms_management]: https://docs.vmssoftware.com/vsi-x-25-management-guide/
+[openvms_problem]: https://docs.vmssoftware.com/vsi-x-25-for-openvms-problem-solving-guide
+[openvms_programming]: https://docs.vmssoftware.com/docs/vsi-x-25-for-openvms-programming-guide.pdf
+[openvms_utilities]: https://docs.vmssoftware.com/vsi-x-25-for-openvms-utilities-guide/
 [rfc1090]: https://datatracker.ietf.org/doc/html/rfc1090
 [rfc1356]: https://datatracker.ietf.org/doc/html/rfc1356
 [rfc1613]: https://datatracker.ietf.org/doc/html/rfc1613
 [rfc874]: https://datatracker.ietf.org/doc/html/rfc874
+[sunlink8]: https://docs.oracle.com/cd/E19957-01/801-6287/801-6287.pdf
+[sunlink9]: https://docs.oracle.com/cd/E19069-01/sol.x25.90/802-3313/802-3313.pdf
+[sunlink9_manage]: https://docs.oracle.com/cd/E19069-01/sol.x25.90/802-3315/802-3315.pdf
+[sunlink9_pad]: https://docs.oracle.com/cd/E19069-01/sol.x25.90/802-3314/802-3314.pdf
 [v35]: https://www.itu.int/rec/T-REC-V.35/en
 [x121]: https://www.itu.int/rec/T-REC-X.121/en
 [x21]: https://www.itu.int/rec/T-REC-X.21/en
