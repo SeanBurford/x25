@@ -19,11 +19,18 @@ permalink: /references/
 *  💕💕 [x25.org][x25org] is the Telebahn web site for the community behind x25 at groups.io.
 *  💕💕 [x25 at groups.io][groupsio] mailing list is a community of people interested in X.25.
 *  💕 [Compu-Global Hyper Mega Net][cghmn] is an overnet that connects retro computing enthusiasts and their machines using Wireguard.  Probably interesting if you're into X.25.
-   *  [Serivces people are running][cghmn_services] doesn't have any X.25 though.  You'll need to be on CGHMN to access `.retro`.
+   *  [Services people are running][cghmn_services] doesn't have any X.25 though.  You'll need to be on CGHMN to access `.retro`.
+
+### History
+
+*  [Deep Dive: Simulating DATAPAC, Canada's Forgotten Internet][datapac] provides an immersive description of what it was like to dial into an X.25 PAD and network.
 
 ### Software
 
-*  [Microsoft PC Mail 3.2][reddit_pcmail] advertised on the box that it could "link multiple Microsoft Mail postoffices by LAN, telephone or X.25."
+Email:
+
+*  [Microsoft PC Mail 3.2][reddit_pcmail] advertised on the box that it could *"link multiple Microsoft Mail postoffices by LAN, telephone or X.25."*  This was likely via an X.400 connector.
+*  The [Sun Internet Mail Server 3.5 Reference Manual][sunmail35] says it *"complies with various other Internet formats and protocols, including ... RFC 1090 (SMTP on X.25)."*
 
 ### Migration to X.25 over TCP (XOT)
 
@@ -106,7 +113,7 @@ ITU-T Recommendations (formerly CCITT) define the various X protocols.  There ar
 
 ## Misc
 
-I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data transmission at 48 kilobits per second using 60-108kHz group band circuits" and includes a schematic in the standard:
+I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is *"Data transmission at 48 kilobits per second using 60-108kHz group band circuits"* and includes a schematic in the standard:
 
 ![Schematic from ITU-T Recommendation V.35](/assets/images/800/v35-000.jpg)
 *Schematic from ITU-T Recommendation V.35*
@@ -123,6 +130,7 @@ I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data t
 [cisco_xot1]: https://www.cisco.com/c/en/us/support/docs/wan/x25-protocols/14216-x25-tcptrans.html
 [cisco_xot]: https://www.cisco.com/c/en/us/support/docs/wan/x25-protocols/9363-x25-over-tcpip.html
 [cisco_xotka]: https://www.cisco.com/c/en/us/support/docs/ip/x25-over-tcp-xot/21120-xot-keepalives.html
+[datapac]: https://slepp.ca/2026/02/01/deep-dive-datapac-x25/
 [emp]: https://www.employees.org/univercd/Feb-1998/cc/td/doc/product/software/ios113ed/113ed_cr/dial_c/dcprt2/dcpad.htm
 [farsite]: https://farsite.com/product-support/x-25-networking-guide/
 [groupsio]: https://groups.io/g/x25
@@ -144,6 +152,7 @@ I think of [V.35][v35] as a gigantic connector, but the ITU-T says it is "Data t
 [sunlink9]: https://docs.oracle.com/cd/E19069-01/sol.x25.90/802-3313/802-3313.pdf
 [sunlink9_manage]: https://docs.oracle.com/cd/E19069-01/sol.x25.90/802-3315/802-3315.pdf
 [sunlink9_pad]: https://docs.oracle.com/cd/E19069-01/sol.x25.90/802-3314/802-3314.pdf
+[sunmail]: https://docs.oracle.com/cd/E19957-01/816-6072-10/816-6072-10.pdf
 [v35]: https://www.itu.int/rec/T-REC-V.35/en
 [x121]: https://www.itu.int/rec/T-REC-X.121/en
 [x21]: https://www.itu.int/rec/T-REC-X.21/en
