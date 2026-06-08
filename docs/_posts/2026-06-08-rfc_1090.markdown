@@ -309,7 +309,7 @@ At this point, the system supports inbound XOT, inbound TCP/25, Cisco‑originat
 
 ## Appendix: Future Projects
 
-The [Sun Internet Mail Server 3.5 Reference Manual][sunmail35] says it *"complies with various other Internet formats and protocols, including RFC 1623 (Internet host application requirements), RFC 1090 (SMTP on X.25), and RFC 976 (UUCP mail interchange)."*  Given all of the references to `x121Address` in the manual, I expect that routing relied on LDAP?  Assuming I could find an ISDN card for my Solaris machines, I've been unable to source a copy of SIMS 3.5 to test with.
+The [Sun Internet Mail Server 3.5 Reference Manual][sunmail] says it *"complies with various other Internet formats and protocols, including RFC 1623 (Internet host application requirements), RFC 1090 (SMTP on X.25), and RFC 976 (UUCP mail interchange)."*  Given all of the references to `x121Address` in the manual, I expect that routing relied on LDAP?  Assuming I could find an ISDN card for my Solaris machines, I've been unable to source a copy of SIMS 3.5 to test with.
 
 The Telenet email client [PC Telemail 1.1][telemail11] looks interesting.  [RFC 1168][rfc1168] says that Telenet used the address format `[USER/ORGANIZATION]HOST/COUNTRY` (e.g. `[INTERMAIL/USCISI]TELEMAIL/USA`), so a Telenet specific gateway would probably have to be developed to route mail to and from this client (not to mention retrieval of stored email).  Telemail support could be a fun project.
 
