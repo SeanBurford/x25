@@ -1,0 +1,342 @@
+---
+layout: post
+title:  "Zawinski Meets X.25"
+date:   2026-06-08 06:00:00 +1000
+categories: email
+---
+
+My goal is to recreate a fully functional RFC 1090 mail transport path, out of historical interest and for technical experimentation.  This enables:
+
+*  Devices on of X.25 links to forward mail.
+*  Users of X.25 to have their mail delivered over X.25.
+
+I've provided software implementing these ideas ([X.25 SMTP Gateway][smtpgateway]), as well as a working implementation at mail.x25.i8c.net (001.700.x25.org).
+
+You're welcome to play with my setup and view the most recent 1,000 messages at https://mail.x25.i8c.net/[padaddr] (where padaddr is the pad dest-addr in the Cisco translate ruleset below. Humans are welcome, I'm just not interested in having it indexed).  The XOT and TCP/25 targets are also exposed for you to enjoy on the same host.
+
+During this implementation, I had the opportunity to explore:
+
+*  The history of email over X.25.
+*  Inbound XOT to MailCatcher.
+*  Connecting a Cisco router to the mail gateway.
+*  Bridging TCP mail to RFC 1090 on Linux
+*  Email software from the era.
+
+# Zawinski Meets X.25
+
+[Zawinski's Law][zawinski]:
+
+> Every program attempts to expand until it can read mail. Those programs which cannot so expand are replaced by ones which can.
+
+Email significantly predates the Internet, dating back to [at least 1965][mailhistory].
+
+Through the 80's and 90's, while the Internet was being developed and growing, X.25 networks were carrying data over virtual circuits.  In 1981 (the same year that IPv4 was defined in RFC 791), [RFC 780][rfc780] anticipated that email might need to travel over X.25, *"but there are indications that it is too error prone to qualify as a reliable channel."*
+
+Fast forward eight years, and [RFC 1090][rfc1090] announced that X.25 public data networks were *"now (in 1989) reliable enough to allow practical direct use of the virtual circuit service"* to carry email.  It went on to define the protocol for mail over X.25 (without any IP layer), and said that there was extensive already production use of the protocol (24 public networks).
+
+### Email address formats
+
+If we are going to deliver mail over X.25, how should we format our email addresses?
+
+What did email addresses look like for the networks using RFC 1090?  Wikipedia has a page of [Non-Internet email address formats][noninternet] listing many of the formats that might have been in use.  [RFC 1168][rfc1168] covers additional formats, such as those used by Telemail and Dialcom (and how gateways connected them).
+
+The UK academic network [JANET][janet], which used the Grey Book format `user@country.type.org.dept`.  X.400 was a competing protocol to SMTP that used addresses similar to LDAP distinguished names and TLS certificate names (`G=Harald;S=Alvestrand;O=Uninett;PRMD=Uninett;A=;C=no`).
+
+Since our gateway speaks SMTP and we now use DNS for looking up names, I chose to support the same DNS name mapping that is supported by x25.org and Cisco routers:
+
+*  `user@001.700.example.com` maps to `user` at `700001` on the X.25 network (and also works over the Internet).
+*  `user@123456.example.com` maps to `user` at `123456` on the X.25 network (and also works over the Internet).
+*  `user@123456` maps to `user` at `123456` on the X.25 network (and could work over the Internet [with some planning][ipv4repr] since 192.0.2.1 == 3221225985).
+*  `user@127.0.0.1` maps to `user` at `100127` on the X.25 network (and could work over the Internet with some planning).
+
+## Inbound XOT to MailCatcher Bridge
+
+With a DNS compatible addressing scheme, we're ready to accept mail to mail.x25.i8c.net via TCP or incoming RFC 1090 encapsulated email over XOT.
+
+The incoming flow of XOT messages from the Internet to MailCatcher looks like this:
+![XOT to MailCatcher Flow](/assets/images/800/XOT_to_mailcatcher.png)
+
+The components are:
+
+1. **XOT-Server** is [GoXOT XOT-Server][goxot], receiving messages over X.25 over TCP (XOT) and forwarding them out over XOT or to local destinations.
+2. **TUN-Gateway** is GoXOT TUN-Gateway, receiving messages from XOT-Server and giving them to the [Linux kernel module][x25module] to handle (or vice versa).
+3. **RFC 1090 Gateway** is [X.25 SMTP Gateway][smtpgateway], listening on an X.25 socket and forwards messages to a TCP SMTP server (or vice versa).
+4. **MailCatcher** is [MailCatcher][mailcatcher], accepting mail to any address and presents it via a web interface.
+5. **XOT-Gateway** is GoXOT XOT-Gateway, forwarding remote X.25 calls out to the Internet.  At the time of writing, this has not been enabled on mail.x25.i8c.net.
+
+## Connecting a Cisco router to the mail gateway
+
+Using a Cisco router to transport mail from TCP to X.25 would demonstrate that the gateway is accessible and useful from multiple clients.
+
+I use a Cisco 1921 router running IOS 15 most testing since it is small, quiet and fairly modern.  My X.25 config has these sections:
+
+<details markdown="1">
+  <summary style="color: #000000; background-color: #d9edf7; border-color: #000000; padding: 15px; border: 1px solid transparent; border-radius: 4px;">
+Goal: Enable X.25 routing and set default packet and window sizes (click to expand):
+</summary>
+```
+x25 profile default dxe
+ x25 address 701001
+ x25 win 3
+ x25 wout 3
+ x25 ips 2048
+ x25 ops 2048
+
+x25 routing
+```
+</details>
+
+<details markdown="1">
+  <summary style="color: #000000; background-color: #d9edf7; border-color: #000000; padding: 15px; border: 1px solid transparent; border-radius: 4px;">
+Goal: Route X.25 traffic over XOT, with addresses determined by DNS:
+</summary>
+```
+x25 route ^(...)(...) xot dns \2.\1.x25.org
+
+xot access-group 10 profile default
+access-list 10 permit any
+```
+</details>
+
+<details markdown="1">
+  <summary style="color: #000000; background-color: #d9edf7; border-color: #000000; padding: 15px; border: 1px solid transparent; border-radius: 4px;">
+Goal: Accept TCP SMTP connections and forward them over X.25 with the RFC 1090 PID:
+</summary>
+```
+translate use telnet 192.0.2.25
+translate ruleset ToSMTP from telnet to pad
+ match dest-addr 192.0.2.25
+ set pad dest-addr 700001
+ set pad pid 0xc0f70000
+ set pad profile ToSMTP
+```
+</details>
+
+When I first telneted to the router and spoke SMTP, I noticed that response lines overwrote request lines on my screen.  To address this I experimented with configuring an X.3 profile until I arrived at `x29 profile ToSMTP 3:34 4:0 13:6`.  The values from this line are described below, you can find more options in [ITU X.3 Packet Assembly/Disassembly Facility (PAD)][x3]:
+
+*  `3:34` chooses which characters trigger an X.25 packet to be sent.  The value 34 includes both (`2`) carriage return and (`32`) line feed (end of line characters), which enables us to send one packet per line of input.  This follows RFC 1090 which says *"It is recommended that SMTP commands and responses be sent as single packets, or single more-data sequences, if only to facilitate debugging the protocol.  This is not a requirement."*
+*  `4:0` disables the input idle timer.  The idle timer sends input to the remote end if the trigger character hasn't been seen but no input has been entered for a period of time.  I want to test with telnet, and I don't want partial lines to be sent just because I typed slowly.
+*  `13:6` requests a line feed be inserted into the stream after each carriage return, in either direction.  This helps follow RFC 1090 *"Lines are terminated by CRLF (13 10 decimal).  Implementations should, if possible, recognize lines terminated only by LF (10 decimal)."*
+
+With all of this in place, I connected to the router with telnet and saw that the XOT connection made it through to the Linux machine running the RFC 1090 gateway, but sending data resulted in no visible response.  Once solved (more on that later) I was able to send email by connecting to the router and speaking SMTP:
+
+```
+> telnet 192.0.2.25
+Trying 192.0.2.25...
+Connected to 192.0.2.25.
+Escape character is '^]'.
+Trying 700001...Open
+220 X25 Gateway Ready
+HELO
+250-smtp Hello [701001]
+250-8BITMIME
+250 SIZE 10485760
+MAIL FROM: test@example.com
+250 Sender OK
+RCPT TO: test@700001
+250 Recipient OK
+DATA
+354 Start mail input; end with <CRLF>.<CRLF>
+Subject: line feed test
+X-TEST: line feed test
+
+Hello.
+This is a line feed test.
+
+.
+250 Message accepted
+QUIT
+```
+
+![MailCatcher screenshot](/assets/images/800/mailcatcher1.png)
+
+At this point, any RFC 1090 client should be able to connect to mail.x25.i8c.net over XOT and send messages, which can then be viewed in the web interface.
+
+### Accepting mail on port 25
+
+My local Cisco router can now forward mail that arrives over TCP/23, but an SMTP router on port 23 isn't much good.  Can we accept mail on port 25?
+
+Cisco don't offer a way to translate TCP to TCP, and they provide a constrained tool set:
+
+*  `translate ruleset ...` is necessary for us to insert our RFC 1090 PID, but putting in `match dest-port 25` doesn't cause the router to accept connections on port 25.
+*  `translate tcp 192.0.2.25 port 25 PROTO ADDR` looks promising for accepting connections on port 25 and mapping them to another destination, but `PROTO` has to be another protocol, it cannot be `TCP`.
+*  `translate use telnet ADDR` doesn't accept a port number.
+
+Perhaps older versions of IOS were more flexible, but let's work with what we have to build a flow from port 25 to port 23. 
+
+<details markdown="1">
+  <summary style="color: #000000; background-color: #d9edf7; border-color: #000000; padding: 15px; border: 1px solid transparent; border-radius: 4px;">
+We could set up some NAT rules, but since I already have a serial port configured with X.25 address `123456` I can do this via more inefficient translate commands (click to expand):
+</summary>
+```
+translate use telnet 192.0.2.25
+
+; Translate incoming TCP 25 to X.25 123456
+translate tcp 192.0.2.25 port 25 x25 123456
+
+; Route 123456 to ourselves over XOT.
+; This works because a serial port is already configured with this address.
+x25 route 123456 xot 192.0.2.25
+
+; Translate incoming XOT 123456 to TCP 23
+translate ruleset FromX25 from pad to telnet
+ match dest-addr 123456
+ set telnet dest-port 23
+ set telnet dest-addr 192.0.2.25
+
+; Translate incoming TCP 23 to X.25 700001
+translate ruleset ToSMTP from telnet to pad
+ match dest-addr 192.0.2.25
+ set pad dest-addr 700001
+ set pad pid 0xc0f70000
+ set pad profile ToSMTP
+
+; Route 700001 using DNS
+x25 route ^(...)(...) xot dns \2.\1.x25.org
+```
+</details>
+
+The above config:
+
+*  Translates incoming TCP 25 to X.25 123456.
+*  Routes 123456 to ourselves over XOT.
+*  Translates Incoming XOT 123456 to TCP 23.
+*  Translates incoming TCP 23 to X.25 700001.
+*  Routes 700001 using DNS.
+
+I wouldn't recommend copying this approach as it consumes a lot of VTYs per connection (NAT would probably be better), but I can now send email using a TCP SMTP client like [SWAKS][swaks] (Swiss Army Knife for SMTP):
+```
+swaks --to test@700001 --from swaks@example.com \
+      --server 192.0.2.25 \
+      --attach @/tmp/hello_world.txt \
+      --header "Subject: Sent with SWAKS"
+```
+
+Note the attachment:
+
+![MailCatcher screenshot](/assets/images/800/mailcatcher2.png)
+
+If anyone knows a better way to connect inbound TCP 25 to inbound TCP 23, let me know.
+
+At this point, mail can be accepted over TCP and delivered to MailCatcher.  People can point their MX records at mail.x25.i8c.net to test this out.
+
+### The Cisco "No Response" Problem
+
+Before we could accept mail via a Cisco router, I had to work out why data packets received no response.
+
+Once I was able to connect through a router, which translated TCP to X.25 and made the connection, I typed in my first HELO command.  Telnet stayed connected but no response was displayed.  This blocked transporting mail via Cisco routers.
+
+To begin investigating I fired up TCPDump and also enabled `--trace` on the GoXOT components.
+
+Trace showed that every time I sent a message I received a `Reset Request` response.  Careful reading of the trace hex dumps above shows that the Call Request and other packets from the client start with the nybble `0x1` while responses from the server start with `0x2`.  This nybble is the GFI (General Format Identifier), which controls how maximum window size (modulo).  The server was ignoring the GFI in the Call Request packet and using a fixed value:
+
+```
+2026/06/05 21:38:20 SVR(9)>TUN(3) CALL_REQ 10 01 0B 66 70 00 01 70 10 01 06 42 0B 0B 43 07 07 C0 F7 00 00
+2026/06/05 21:38:20 TUN(3)>SVR(9) CALL_CONN 20 01 0F 00 06 42 07 07 43 02 02
+2026/06/05 21:38:20 TUN(3)>SVR(9) DATA 20 01 00 00 32 32 30 20 58 32 35 20 47 61 74 65 77 61 79 20 52 65 61 64 79 0D 0A
+2026/06/05 21:38:20 SVR(9)>TUN(3) RR 10 01 21
+2026/06/05 21:38:31 SVR(9)>TUN(3) DATA 10 01 20 48 45 4C 4F 0D
+2026/06/05 21:38:31 TUN(3)>SVR(9) RESET_REQ 20 01 1B 00 00
+2026/06/05 21:38:31 SVR(9)>TUN(3) RESET_CONF 10 01 1F
+2026/06/05 21:38:38 SVR(9)>TUN(3) DATA 10 01 00 4D 41 49 4C 20 46 52 4F 4D 3A 20 74 65 73 74 40 6D 61 63 68 69 6E 65 2E 65 78 61 6D 70 6C 65 2E 63 6F 6D 0D
+2026/06/05 21:38:38 TUN(3)>SVR(9) RESET_REQ 20 01 1B 00 00
+2026/06/05 21:38:38 SVR(9)>TUN(3) RESET_CONF 10 01 1F
+```
+
+Examining the X.25 Linux kernel module, we find the root cause.  There is an the "Extended" flag that controls whether Linux expects window sizes of 0-7, or Extended window sizes of 0-127.  It is set with `SIOCX25SSUBSCRIPT` and applies to all connections through a link (e.g. a TUN device).  Linux ignores the GFI in incoming Call Request packets and uses the GFI implied by the Extended flag.
+
+I don't know if this behaviour is correct since GFI negotiation isn't well covered in [ITU X.25 recommendation][x25].  It does break calls from Cisco routers though.
+
+I can think of three ways to resolve this:
+
+1. Only have GoXOT TUN-Gateway set the Extended flag on TUN devices if the user requests it in the config.
+2. Modify the Linux X.25 module to use the same GFI modulo as it sees in Call Request packets when accepting calls.
+3. Work out how to have the router request modulo 128 connections so that the GFI matches what GoXOT/Linux is using.
+
+I patched a copy of the Linux X.25 module to use the callers GFI/modulo ([Use neighbour preference for extended seq][linuxmodulo]) and verified that it addresses this issue.
+
+Since this breakage was an side effect of a design decision in GoXOT, I also patched GoXOT to default to a modulo of 8 on TUN devices ([Make TUN modulo configurable][goxotmodulo]).  There is a config item that can change the modulo to 128 if needed (e.g. to improve throughput on fast, high latency links).
+
+##  Bridging TCP mail to RFC 1090 on Linux
+
+With mail over XOT working, the next step is to accept mail over TCP and bridge it to X.25.
+
+The mail.x25.i8c.net incoming flow of messages from TCP/25 to MailCatcher or XOT looks like this:
+![TCP to MailCatcher Flow](/assets/images/800/tcp_to_mailcatcher.png)
+
+(At the time of writing, remote destinations have not been enabled).
+
+Listener is [X.25 SMTP Gateway][smtpgateway], listening on a TCP socket and encapsulating messages in RFC 1090 for X.25.
+
+Postfix accepts mail on TCP/25, applies some filtering, verifies that X.25 destinations are reachable then forwards mail via the X.25 gateway.
+
+<details markdown="1">
+  <summary style="color: #000000; background-color: #d9edf7; border-color: #000000; padding: 15px; border: 1px solid transparent; border-radius: 4px;">
+postfix main.cf ensures that X.25 addresses are valid before accepting mail:
+</summary>
+```
+...
+smtpd_relay_restrictions = reject_unauth_destination reject_unverified_recipient
+smtp_address_verify_target = data
+unverified_recipient_reject_reason = Unrouted recipient
+parent_domains_matches_subdomains = relay_domains
+relay_domains = [snip]
+transport_maps = lmdb:/etc/postfix/transportmap
+...
+```
+</details>
+
+The magic happens in transportmap, which maps incoming domains to TCP/2500 where the Listener is ready:
+```
+[snip]	relay:127.0.0.1:2500
+```
+
+### Accepting connections to any X.25 address
+
+A TCP/25 and RFC 1090 XOT mail target is more useful if it accepts messages to any X.25 address.  For example, an operator might want to point the MX for their xxx.yyy.x25.org at mail.x25.i8c.net and have messages delivered to the mail catcher.
+
+The X.25 SMTP Gateway has to accept calls to any X.25 address by binding the wildcard address to make this possible.
+
+You might expect that `bind()` for the empty address "" would match every incoming call.  I'm sure there are other uses for the empty address, and the X.25 module author probably agrees, since that isn't the answer.
+
+Instead, the wildcard address is 15 spaces:
+
+```
+static const struct x25_address null_x25_address = {"               "};
+```
+
+At this point, the system supports inbound XOT, inbound TCP/25, Cisco‑originated SMTP to X.25 calls, and wildcard X.25 addressing.
+
+## Appendix: Future Projects
+
+The [Sun Internet Mail Server 3.5 Reference Manual][sunmail35] says it *"complies with various other Internet formats and protocols, including RFC 1623 (Internet host application requirements), RFC 1090 (SMTP on X.25), and RFC 976 (UUCP mail interchange)."*  Given all of the references to `x121Address` in the manual, I expect that routing relied on LDAP?  Assuming I could find an ISDN card for my Solaris machines, I've been unable to source a copy of SIMS 3.5 to test with.
+
+The Telenet email client [PC Telemail 1.1][telemail11] looks interesting.  [RFC 1168][rfc1168] says that Telenet used the address format `[USER/ORGANIZATION]HOST/COUNTRY` (e.g. `[INTERMAIL/USCISI]TELEMAIL/USA`), so a Telenet specific gateway would probably have to be developed to route mail to and from this client (not to mention retrieval of stored email).  Telemail support could be a fun project.
+
+[Redditor CheekiBreeki95][cheekibreeki95] found a 1993 promotional sample copy of Microsoft Mail (the predecessor to Exchange) designed for Windows Chicago.  On the back of the box it says *New: Link multiple Microsoft Mail postoffices by LAN, telephone or X.25*.  Wikipedia says that [Microsoft Mail][wikimsmail] shipped with an X.400 over X.25 connector.  X.400 was a competing protocol to SMTP, so MS Mail almost certainly doesn't talk RFC 1090 SMTP over X.25.
+
+
+[cheekibreeki95]: https://www.reddit.com/r/vintagecomputing/comments/rkrobn/i_found_a_1993_pre_release_copy_of_microsoft_mail/
+[goxot]: https://github.com/SeanBurford/goxot/
+[goxotmodulo]: https://github.com/SeanBurford/goxot/commit/1136e383ea635230e914baabf11ac2a6689a2a65
+[ipv4repr]: https://en.wikipedia.org/wiki/IPv4#Address_representations
+[janet]: https://en.wikipedia.org/wiki/JANET
+[linuxmodulo]: https://github.com/SeanBurford/linux_x25_module/commit/3128ab4e6a7509f2e6e04b92a3ca25ac9e34aaaf
+[mailcatcher]: https://mailcatcher.me/
+[mailhistory]: https://multicians.org/thvv/mail-history.html
+[noninternet]: https://en.wikipedia.org/wiki/Non-Internet_email_address
+[reidhistory]: https://web.archive.org/web/20070820064908/http://www.uknof.org.uk/uknof7/Reid-History.pdf
+[rfc1090]: https://datatracker.ietf.org/doc/html/rfc1090
+[rfc1168]: https://datatracker.ietf.org/doc/html/rfc1168
+[rfc722]: https://datatracker.ietf.org/doc/html/rfc772
+[rfc780]: https://datatracker.ietf.org/doc/html/rfc780
+[smtpgateway]: https://github.com/SeanBurford/x25-smtp-gateway/
+[sunmail]: https://docs.oracle.com/cd/E19957-01/816-6072-10/816-6072-10.pdf
+[swaks]: https://www.jetmore.org/john/code/swaks/
+[telemail11]: https://winworldpc.com/product/pc-telemail/11
+[traffichistory]: https://blogs.cisco.com/sp/the-history-and-future-of-internet-traffic
+[wikimsmail]: https://en.wikipedia.org/wiki/Microsoft_Mail
+[x25]: https://www.itu.int/rec/T-REC-X.25/en
+[x25module]: https://github.com/SeanBurford/linux_x25_module
+[x3]: https://www.itu.int/rec/T-REC-X.3/en
+[zawinski]: https://www.laws-of-software.com/laws/zawinski/
