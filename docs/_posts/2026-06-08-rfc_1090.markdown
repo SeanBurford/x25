@@ -40,7 +40,7 @@ If we are going to deliver mail over X.25, how should we format our email addres
 
 What did email addresses look like for the networks using RFC 1090?  Wikipedia has a page of [Non-Internet email address formats][noninternet] listing many of the formats that might have been in use.  [RFC 1168][rfc1168] covers additional formats, such as those used by Telemail and Dialcom (and how gateways connected them).
 
-The UK academic network [JANET][janet], which used the Grey Book format `user@country.type.org.dept`.  X.400 was a competing protocol to SMTP that used addresses similar to LDAP distinguished names and TLS certificate names (`G=Harald;S=Alvestrand;O=Uninett;PRMD=Uninett;A=;C=no`).
+The UK academic network [JANET][janet], which used the Grey Book format `user@country.type.org.dept`.
 
 Since our gateway speaks SMTP and we now use DNS for looking up names, I chose to support the same DNS name mapping that is supported by x25.org and Cisco routers:
 
@@ -306,6 +306,12 @@ static const struct x25_address null_x25_address = {"               "};
 ```
 
 At this point, the system supports inbound XOT, inbound TCP/25, Cisco‑originated SMTP to X.25 calls, and wildcard X.25 addressing.
+
+## Appendix: Other Mail Protocols
+
+DEC's VAX/VMS PSI X.25 Suite included PSImail, which largely used UUCP for WAN tranport.  Hans was involved in implementing a Unix PSImail gateway for Xenix and System V which you can find at https://code.netzhansa.com/hanshuebner/psimail
+
+X.400 was a competing protocol to SMTP that used addresses similar to LDAP distinguished names and TLS certificate names (`G=Harald;S=Alvestrand;O=Uninett;PRMD=Uninett;A=;C=no`).  There were probably more X.400 installations than those using RFC 1090.  You can find an X.400 MTA at https://github.com/Wildboar-Software/pp (other components such as an X.500 directory are in other Wildboar Software repos).
 
 ## Appendix: Future Projects
 
