@@ -32,7 +32,7 @@ This Cisco 1921 represents relatively modern routers.  It is running `C1900-UNIV
 It has two EHWIC slots that can accept high-speed WAN interface cards (HWIC), Voice/WAN interface cards (VWIC) and WAN interface cards (WIC).  A lot of older WAN cards were no longer supported by the software in the 1900/2900 and later series, which presents a challenge in getting it onto my X.25 network.
 
 I use this router in these experiments:
-*  [T1/E1 PRI Back to Back](/hardware/isdn/2026/04/09/pri-back-to-back.html)
+*  [T1/E1 PRI Back to Back](/hardware/isdn/2026/04/08/pri-back-to-back.html)
 
 ### Cisco 3845 - IOS 15.1(4)M10
 
@@ -42,7 +42,7 @@ My 3845 contains a 64-channel (G.711) Voice/Fax PVDMII DSP SIMM PVDM daughter ca
 
 I use this router in these experiments:
 *  [Serial and Smart Serial Back to Back](/hardware/serial/2026/04/06/serial-back-to-back.html)
-*  [T1/E1 PRI Back to Back](/hardware/isdn/2026/04/09/pri-back-to-back.html)
+*  [T1/E1 PRI Back to Back](/hardware/isdn/2026/04/08/pri-back-to-back.html)
 
 ### Cisco 2610 - IOS 12.1(27b)
 
